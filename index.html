@@ -493,7 +493,7 @@
   //   hero_sheet.png : 12 frames (384x32) — one row of the sprite sheet.
   //     cols 0-2 = up (stand, walk, attack), 3-5 = down, 6-8 = left, 9-11 = right.
   //   ground.png     : a single 32x32 grass tile, tiled across the field.
-  const IMG = { hero: null, ground: null, monsters: null, monstersW: null, mask1: null, objects: null };
+  const IMG = { hero: null, ground: null, monsters: null, monstersW: null, mask1: null, objects: null, water: null, paths: null };
   function loadImg(src) {
     return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
   }
@@ -510,8 +510,9 @@
   // ---- Layered tile map (Mirage-style: ground + mask1 decor + objects) --
   // ground.png:  0 grass,1 red-flower,2 blue-flower,3 sand,4 stone,5 cobble,6 gravel,7 dungeon,8 wood,9 dark-floor
   // mask1.png:   0 bush,1 flowers,2 red-flowers,3 shrub,4 bones,5 dark-shrub
-  // Biomes: 0 meadow, 1 forest, 2 rocky, 3 desert, 4 ruins
-  const BIOME_SCALE = 11;
+  // Biomes: 0 meadow, 1 forest, 2 rocky, 3 desert, 4 ruins. Bigger scale =
+  // larger, more coherent regions and fewer biome edges cutting objects apart.
+  const BIOME_SCALE = 15;
   function biomeAt(tx, ty) {
     const v = vnoise(tx / BIOME_SCALE, ty / BIOME_SCALE);
     if (v < 0.40) return 0;   // meadow (most common)
@@ -519,6 +520,73 @@
     if (v < 0.76) return 2;   // rocky
     if (v < 0.88) return 3;   // desert
     return 4;                 // ruins
+  }
+  // Integrity check: every cell an object visually covers must be the same
+  // biome as its anchor, so we never get a pyramid whose top spills onto grass.
+  function biomeConsistent(tx, ty, cellsW, cellsH) {
+    const bi = biomeAt(tx, ty);
+    const half = (cellsW - 1) >> 1;
+    for (let dy = -(cellsH - 1); dy <= 0; dy++) {
+      for (let dx = -half; dx <= (cellsW - 1) - half; dx++) {
+        if (biomeAt(tx + dx, ty + dy) !== bi) return false;
+      }
+    }
+    return true;
+  }
+  // Coarse noise fields for spatial clustering — high values mark centers of
+  // settlements, graveyards, or ruin fields. Objects only spawn if we're
+  // both inside the right biome AND inside the matching cluster.
+  const CLUSTER_SCALE = 7;
+  function clusterAt(tx, ty, salt) {
+    return vnoise(tx / CLUSTER_SCALE + salt * 13.1, ty / CLUSTER_SCALE + salt * 7.7);
+  }
+
+  // ---- Water lakes ----------------------------------------------------
+  // Water forms rare irregular ponds in meadow/forest biomes only. We use
+  // a small noise field with a low threshold so lakes are localized blobs.
+  const WATER_SCALE = 5;
+  function isWaterCell(tx, ty) {
+    const bi = biomeAt(tx, ty);
+    if (bi !== 0 && bi !== 1) return false; // meadow/forest only
+    if (Math.abs(tx) <= 3 && Math.abs(ty) <= 3) return false; // keep spawn dry
+    return vnoise(tx / WATER_SCALE + 11.3, ty / WATER_SCALE + 27.9) < 0.20;
+  }
+  // 4x3 water autotile in water.png. Map 4-cardinal grass-adjacency bitmask
+  // (bit0=N,bit1=S,bit2=E,bit3=W) → (col,row) in the water sheet.
+  //   Diagonals ignored — good enough for procedural blobs.
+  const WATER_UV = { // srcX, srcY per bitmask
+    0b0000: [32, 32], // pure water fill (no shore)
+    0b0001: [0,  32], // W shore
+    0b0010: [96, 32], // E shore
+    0b0100: [32, 64], // S shore
+    0b1000: [32, 0],  // N shore
+    0b1001: [0,  0],  // NW corner
+    0b1010: [96, 0],  // NE corner
+    0b0101: [0,  64], // SW corner
+    0b0110: [96, 64], // SE corner
+    // fallback for any other combo (N+S, E+W, 3-way, all): use fill
+  };
+  function waterUV(tx, ty) {
+    const mask =
+      ((!isWaterCell(tx, ty-1)) << 0) |
+      ((!isWaterCell(tx, ty+1)) << 1) |
+      ((!isWaterCell(tx+1, ty)) << 2) |
+      ((!isWaterCell(tx-1, ty)) << 3);
+    return WATER_UV[mask] || WATER_UV[0b0000];
+  }
+
+  // ---- Paths ----------------------------------------------------------
+  // Winding dirt trails through meadow, made from a narrow band of noise so
+  // paths look like snake-like ribbons rather than blobs. Paths never cross
+  // water. Uses a single "cross" dirt tile which has grass-corner blending.
+  const PATH_SCALE = 4.5;
+  function isPathCell(tx, ty) {
+    if (isWaterCell(tx, ty)) return false;
+    const bi = biomeAt(tx, ty);
+    if (bi !== 0 && bi !== 1 && bi !== 2) return false; // no paths in desert/ruins
+    if (Math.abs(tx) <= 2 && Math.abs(ty) <= 2) return false;
+    const v = vnoise(tx / PATH_SCALE + 41.7, ty / PATH_SCALE + 19.1);
+    return v > 0.48 && v < 0.52; // narrow band → winding trails
   }
   const th = (tx, ty, salt) => hash2(tx * 131 + salt * 977, ty * 131 + salt * 31);
   function groundIdx(bi, tx, ty) {
@@ -591,27 +659,111 @@
     { sx:576, w:64, h:64,  bw:54, bh:30 }, // 14 stone house (2x2)
     { sx:640, w:96, h:96,  bw:86, bh:40 }, // 15 big house (3x3)
     { sx:736, w:32, h:64,  bw:26, bh:30 }, // 16 tower (1x2)
-    { sx:768, w:96, h:128, bw:88, bh:56 }  // 17 pyramid (3x4)
+    { sx:768, w:96, h:128, bw:88, bh:56 }, // 17 pyramid (3x4)
+    // Wall ruins — pre-composed wall segments (top row = battlements/wall body,
+    // bottom row = archways/windows). Solid across the full base, so they act
+    // as landmark barriers you have to walk around.
+    { sx:864,  w:96, h:64, bw:180, bh:26 }, // 18 castle wall + arch (3x2 gray stone)
+    { sx:960,  w:96, h:64, bw:180, bh:26 }, // 19 brick + arch wall (3x2 red/tan)
+    { sx:1056, w:32, h:64, bw:56,  bh:26 }  // 20 wall tower fragment (1x2)
   ];
-  // Which object (if any) is anchored at this tile — biome-weighted, deterministic.
-  // Buildings sit in the rarest slice so they appear as occasional landmarks.
+  // Which object (if any) is anchored at this tile. Placement uses two gates:
+  //   1) biome type (from biomeAt)
+  //   2) a coherent cluster (settlement / graveyard / ruin / oasis) so objects
+  //      group into thematic pockets instead of scattering random landmarks.
+  // Multi-tile pieces also require biomeConsistent() so a pyramid can't spill
+  // onto grass and a castle wall can't straddle two biomes.
   function objAt(tx, ty) {
     if (Math.abs(tx) <= 2 && Math.abs(ty) <= 2) return -1; // keep spawn area clear
+    if (isWaterCell(tx, ty) || isPathCell(tx, ty)) return -1; // clear on water & paths
     const bi = biomeAt(tx, ty), h = th(tx, ty, 3);
-    if (bi === 0) return h<0.0035?13 : h<0.018?0 : h<0.032?1 : h<0.047?4 : h<0.052?5 : h<0.062?12 : -1; // meadow: cabin + trees
-    if (bi === 1) return h<0.0025?13 : h<0.10?0 : h<0.19?1 : h<0.26?3 : h<0.33?4 : h<0.38?12 : -1;       // forest: rare cabin + dense trees
-    if (bi === 2) return h<0.0040?16 : h<0.034?6 : h<0.054?7 : h<0.069?8 : -1;                            // rocky: tower + graves/barrels/pillars
-    if (bi === 3) return h<0.0050?17 : h<0.055?10 : h<0.070?7 : h<0.085?2 : -1;                           // desert: pyramid + cactus
-    return h<0.0060?15 : h<0.012?14 : h<0.018?16 : h<0.078?8 : h<0.108?6 : h<0.128?9 : h<0.148?7 : -1;    // ruins: houses/tower + pillars/graves
+    const settle  = clusterAt(tx, ty, 1);
+    const grave   = clusterAt(tx, ty, 2);
+    const ruin    = clusterAt(tx, ty, 3);
+
+    if (bi === 0) { // MEADOW — SMALL farmsteads (not sprawling towns), mostly trees
+      if (settle > 0.82) { // rarer, tighter village pocket (was 0.72)
+        if (h < 0.04 && biomeConsistent(tx, ty, 2, 2)) return 13; // log cabin (was 0.10)
+        if (h < 0.08) return 12;                                  // small bushes as yard
+        if (h < 0.11) return 5;                                   // rare well
+      }
+      if (h < 0.020) return 0;   // fruit tree
+      if (h < 0.032) return 1;   // oval tree
+      if (h < 0.044) return 4;   // bush-tree
+      if (h < 0.060) return 12;  // small bush
+      return -1;
+    }
+
+    if (bi === 1) { // FOREST — dense trees + a very rare woodsman cabin
+      if (settle > 0.86 && h < 0.02 && biomeConsistent(tx, ty, 2, 2)) return 13; // even rarer
+      if (h < 0.11) return 0;
+      if (h < 0.20) return 1;
+      if (h < 0.27) return 3;    // pine
+      if (h < 0.34) return 4;
+      if (h < 0.38) return 12;
+      return -1;
+    }
+
+    if (bi === 2) { // ROCKY — ancient watchtower ruins in ruin clusters + small graves
+      if (ruin > 0.72) {
+        if (h < 0.05 && biomeConsistent(tx, ty, 3, 2)) return 18; // castle wall
+        if (h < 0.12 && biomeConsistent(tx, ty, 1, 2)) return 20; // wall tower
+        if (h < 0.20 && biomeConsistent(tx, ty, 1, 2)) return 16; // solid tower
+        if (h < 0.32) return 8;                                   // pillars around
+      }
+      if (grave > 0.72 && h < 0.20) return 6;                     // grave clusters
+      if (h < 0.025) return 8;                                    // sparse pillars elsewhere
+      if (h < 0.045) return 7;                                    // barrel
+      return -1;
+    }
+
+    if (bi === 3) { // DESERT — pyramids ONLY in deep-desert cluster, cactus common
+      if (ruin > 0.80 && h < 0.03 && biomeConsistent(tx, ty, 3, 4)) return 17; // pyramid
+      if (settle > 0.75 && h < 0.10 && biomeConsistent(tx, ty, 2, 2)) return 14; // desert outpost
+      if (h < 0.055) return 10;  // cactus
+      if (h < 0.075) return 7;   // barrel
+      if (h < 0.090) return 2;   // palm oasis
+      return -1;
+    }
+
+    // RUINS — themed pockets, houses are LANDMARKS (rare), not carpeting.
+    if (settle > 0.85) { // rarer settlement pockets (was 0.72)
+      if (h < 0.015 && biomeConsistent(tx, ty, 3, 3)) return 15;  // big house — very rare
+      if (h < 0.035 && biomeConsistent(tx, ty, 2, 2)) return 14;  // stone house
+      if (h < 0.07 && biomeConsistent(tx, ty, 1, 2)) return 16;   // tower
+      if (h < 0.14) return 8;                                     // pillars in courtyard
+    }
+    if (ruin > 0.75) {
+      if (h < 0.04 && biomeConsistent(tx, ty, 3, 2)) return 18;   // castle wall
+      if (h < 0.08 && biomeConsistent(tx, ty, 3, 2)) return 19;   // brick wall
+      if (h < 0.12 && biomeConsistent(tx, ty, 1, 2)) return 20;   // wall tower
+      if (h < 0.22) return 8;                                     // pillars
+      if (h < 0.28) return 9;                                     // altar
+    }
+    if (grave > 0.72 && h < 0.30) return 6;                       // cemetery
+    if (h < 0.03) return 8;                                       // sparse pillars
+    if (h < 0.05) return 7;                                       // barrel
+    return -1;
   }
   // circle-vs-solid-object test (base box centered on the anchor cell's bottom)
   function circleBlocked(x, y, r) {
     const T = GROUND_T, ptx = Math.floor(x/T), pty = Math.floor(y/T);
+    // Water blocks — check the cell(s) the actor stands over
+    for (let ty = pty-1; ty <= pty+1; ty++) {
+      for (let tx = ptx-1; tx <= ptx+1; tx++) {
+        if (!isWaterCell(tx, ty)) continue;
+        const bx = tx*T + 4, by = ty*T + 4, bw = T-8, bh = T-8; // slightly inset so shore is walkable
+        const nx = clamp(x, bx, bx+bw), ny = clamp(y, by, by+bh);
+        const dx = x-nx, dy = y-ny;
+        if (dx*dx + dy*dy < r*r) return true;
+      }
+    }
+    // Solid objects
     for (let ty = pty-1; ty <= pty+1; ty++) {
       for (let tx = ptx-1; tx <= ptx+1; tx++) {
         const oi = objAt(tx, ty); if (oi < 0) continue;
         const d = OBJDEFS[oi]; if (d.bw <= 0) continue;
-        const cx = tx*T + T/2, cb = (ty+1)*T; // base box centered on cell, at its bottom
+        const cx = tx*T + T/2, cb = (ty+1)*T;
         const bx = cx - d.bw/2, by = cb - d.bh, bw = d.bw, bh = d.bh;
         const nx = clamp(x, bx, bx+bw), ny = clamp(y, by, by+bh);
         const dx = x-nx, dy = y-ny;
@@ -896,10 +1048,8 @@
   function killEnemy(e) {
     e.dead = true; kills++;
     Audio2.kill();
-    // blood splat left on the ground where it died (random variant, capped)
-    decals.push({ x:e.x, y:e.y + e.r*0.4, s:(e.boss?76:30+Math.random()*22),
-                  rot:Math.random()*TAU, m:pickBloodTile(e.boss) });
-    if (decals.length > 80) decals.shift();
+    // blood splat left on the ground (stacks with nearby splats to accumulate)
+    addBloodDecal(e.x, e.y + e.r*0.4, e.boss);
     // cash drop
     gems.push({ x:e.x, y:e.y, v:e.xp, r:6, vx:rand(-30,30), vy:rand(-30,30) });
     // poof particles
@@ -1265,8 +1415,18 @@
         const tx = startTx + i, ty = startTy + j;
         const dx = tx*T - camX, dy = ty*T - camY;
         const bi = biomeAt(tx, ty);
+        // Ground base — always draw the biome tile so water/paths have grass under their edges
         ctx.drawImage(IMG.ground, groundIdx(bi,tx,ty)*32, 0, 32, 32, dx, dy, T, T);
-        if (IMG.mask1) { const m = mask1Idx(bi,tx,ty); if (m >= 0) ctx.drawImage(IMG.mask1, m*32, 0, 32, 32, dx, dy, T, T); }
+        // Water autotile — overlays with grass-blended shore edges
+        if (IMG.water && isWaterCell(tx, ty)) {
+          const uv = waterUV(tx, ty);
+          ctx.drawImage(IMG.water, uv[0], uv[1], 32, 32, dx, dy, T, T);
+        } else {
+          // Path patch — dirt tile w/ transparent grass edges (paths never overlay water)
+          if (IMG.paths && isPathCell(tx, ty)) ctx.drawImage(IMG.paths, 3*32, 0, 32, 32, dx, dy, T, T);
+          // mask1 decor (skipped on water so we don't get bones on water)
+          if (IMG.mask1) { const m = mask1Idx(bi,tx,ty); if (m >= 0) ctx.drawImage(IMG.mask1, m*32, 0, 32, 32, dx, dy, T, T); }
+        }
       }
     }
     ctx.imageSmoothingEnabled = sm;
@@ -1638,9 +1798,10 @@
     await CG.init();          // resolves immediately if SDK absent
     CG.sdkLoadingStop();      // dismiss CrazyGames' own splash
     // load external art (small extracted sheets)
-    [IMG.hero, IMG.ground, IMG.monsters, IMG.mask1, IMG.objects] = await Promise.all([
+    [IMG.hero, IMG.ground, IMG.monsters, IMG.mask1, IMG.objects, IMG.water, IMG.paths] = await Promise.all([
       loadImg('hero_sheet.png'), loadImg('ground.png'), loadImg('monsters.png'),
-      loadImg('mask1.png'), loadImg('objects.png') ]);
+      loadImg('mask1.png'), loadImg('objects.png'),
+      loadImg('water.png'), loadImg('paths.png') ]);
     if (IMG.monsters) IMG.monstersW = makeWhite(IMG.monsters);
     hiScore = parseInt(CG.getItem(HI_KEY) || '0', 10) || 0;
     refreshHiScore();
