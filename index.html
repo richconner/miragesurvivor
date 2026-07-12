@@ -612,7 +612,7 @@
     if (bi === 1) return h < 0.14 ? 2 : 0;                      // forest floor
     if (bi === 2) return h < 0.4 ? 4 : h < 0.72 ? 5 : 6;        // rocky
     if (bi === 3) return 3;                                     // desert sand
-    return h < 0.45 ? 7 : h < 0.75 ? 9 : 8;                     // ruins: dungeon/dark/wood
+    return h < 0.45 ? 4 : h < 0.75 ? 5 : 6;                     // ruins: stone/cobble/gravel
   }
   function mask1Idx(bi, tx, ty) {
     const h = th(tx, ty, 2);
@@ -663,7 +663,7 @@
     { sx:96,  w:64, h:96,  bw:28, bh:24 }, // 1 oval tree (2x3)
     { sx:160, w:32, h:64,  bw:16, bh:18 }, // 2 palm (1x2)
     { sx:192, w:32, h:64,  bw:18, bh:20 }, // 3 pine (1x2)
-    { sx:224, w:32, h:64,  bw:20, bh:20 }, // 4 bush-tree (1x2)
+    { sx:224, w:32, h:32,  bw:20, bh:20 }, // 4 bush (1x1)
     { sx:256, w:32, h:32,  bw:26, bh:22 }, // 5 well
     { sx:288, w:32, h:32,  bw:22, bh:22 }, // 6 gravestone
     { sx:320, w:32, h:32,  bw:24, bh:22 }, // 7 barrel
@@ -674,24 +674,32 @@
     { sx:480, w:32, h:32,  bw:0,  bh:0  }, // 12 small bush (decor, walk-through)
     { sx:512, w:64, h:64,  bw:54, bh:30 }, // 13 log cabin (2x2)
     { sx:576, w:64, h:64,  bw:54, bh:30 }, // 14 stone house (2x2)
-    { sx:640, w:96, h:96,  bw:86, bh:40 }, // 15 big house (3x3)
-    { sx:736, w:32, h:64,  bw:26, bh:30 }, // 16 tower (1x2)
-    { sx:768, w:96, h:128, bw:88, bh:56 }, // 17 pyramid (3x4)
-    { sx:864,  w:96, h:64, bw:180, bh:26 }, // 18 castle wall + arch (3x2 gray stone)
-    { sx:960,  w:96, h:64, bw:180, bh:26 }, // 19 brick + arch wall (3x2 red/tan)
-    { sx:1056, w:32, h:64, bw:56,  bh:26 }, // 20 wall tower fragment (1x2)
-    { sx:1152, w:32, h:64, bw:16, bh:18 }, // 21 conifer (1x2)
-    { sx:1184, w:32, h:64, bw:14, bh:16 }, // 22 dead tree (1x2)
-    { sx:1216, w:32, h:64, bw:16, bh:18 }, // 23 autumn tree (1x2)
-    { sx:1248, w:96, h:32, bw:80, bh:26 }, // 24 fountain (3x1)
-    { sx:1344, w:32, h:32, bw:22, bh:22 }, // 25 angel statue (1x1)
-    { sx:1376, w:32, h:32, bw:12, bh:16 }, // 26 stone cross (1x1)
-    { sx:1408, w:64, h:64, bw:54, bh:30 }, // 27 wooden church (2x2)
-    { sx:1472, w:64, h:64, bw:54, bh:30 }, // 28 tavern (2x2)
-    { sx:1536, w:32, h:64, bw:26, bh:28 }, // 29 cottage (1x2)
-    { sx:1568, w:96, h:64, bw:86, bh:36 }, // 30 stone church (3x2)
-    { sx:1664, w:96, h:96, bw:86, bh:40 }, // 31 large church (3x3)
-    { sx:1760, w:160,h:192,bw:120,bh:80 }  // 32 castle (5x6)
+    { sx:640, w:32, h:32,  bw:26, bh:22 }, // 15 small house (1x1)
+    { sx:736, w:32, h:64,  bw:0,  bh:0  }, // 16 tower (EMPTY)
+    { sx:768, w:96, h:160, bw:88, bh:56 }, // 17 pyramid (3x5)
+    { sx:864,  w:96, h:64, bw:0,   bh:0  }, // 18 castle wall (EMPTY)
+    { sx:992,  w:64, h:32, bw:44, bh:22 }, // 19 brick accent (2x1)
+    { sx:1056, w:32, h:32, bw:14, bh:18 }, // 20 wall tower fragment (1x1)
+    { sx:1088, w:32, h:64, bw:16, bh:18 }, // 21 conifer (1x2)
+    { sx:1120, w:32, h:64, bw:14, bh:16 }, // 22 dead tree (1x2)
+    { sx:1152, w:32, h:64, bw:16, bh:18 }, // 23 autumn tree (1x2)
+    { sx:1216, w:64, h:32, bw:54, bh:26 }, // 24 fountain (2x1)
+    { sx:1280, w:32, h:32, bw:22, bh:22 }, // 25 angel statue (1x1)
+    { sx:1312, w:32, h:32, bw:12, bh:16 }, // 26 stone cross (1x1)
+    { sx:1344, w:64, h:64, bw:54, bh:30 }, // 27 wooden church (2x2)
+    { sx:1408, w:64, h:64, bw:54, bh:30 }, // 28 tavern (2x2)
+    { sx:1472, w:32, h:32, bw:26, bh:22 }, // 29 cottage (1x1)
+    { sx:1504, w:64, h:64, bw:54, bh:36 }, // 30 stone church (2x2)
+    { sx:1568, w:96, h:96, bw:86, bh:40 }, // 31 large church (3x3)
+    { sx:1664, w:192,h:192,bw:150,bh:80 }, // 32 castle (6x6)
+    { sx:1856, w:32, h:32, bw:24, bh:22 }, // 33 barrel blue (1x1)
+    { sx:1888, w:32, h:32, bw:24, bh:22 }, // 34 barrel side (1x1)
+    { sx:1920, w:32, h:32, bw:24, bh:22 }, // 35 large barrel (1x1)
+    { sx:1952, w:32, h:32, bw:24, bh:22 }, // 36 barrel open (1x1)
+    { sx:1984, w:32, h:32, bw:26, bh:22 }, // 37 cauldron (1x1)
+    { sx:2016, w:32, h:32, bw:22, bh:20 }, // 38 pot dark (1x1)
+    { sx:2048, w:32, h:32, bw:22, bh:20 }, // 39 pot green (1x1)
+    { sx:2080, w:32, h:32, bw:24, bh:22 }  // 40 green cauldron (1x1)
   ];
   // Which object (if any) is anchored at this tile. Placement uses two gates:
   //   1) biome type (from biomeAt)
@@ -700,99 +708,117 @@
   // Multi-tile pieces also require biomeConsistent() so a pyramid can't spill
   // onto grass and a castle wall can't straddle two biomes.
   function objAt(tx, ty) {
-    if (Math.abs(tx) <= 2 && Math.abs(ty) <= 2) return -1; // keep spawn area clear
-    if (isWaterCell(tx, ty) || isPathCell(tx, ty)) return -1; // clear on water & paths
+    if (Math.abs(tx) <= 2 && Math.abs(ty) <= 2) return -1;
+    if (isWaterCell(tx, ty) || isPathCell(tx, ty)) return -1;
     const bi = biomeAt(tx, ty), h = th(tx, ty, 3);
     const settle  = clusterAt(tx, ty, 1);
     const grave   = clusterAt(tx, ty, 2);
     const ruin    = clusterAt(tx, ty, 3);
 
-    if (bi === 0) { // MEADOW — farmsteads + trees
+    if (bi === 0) { // MEADOW
       if (settle > 0.82) {
-        if (h < 0.02 && biomeConsistent(tx, ty, 2, 2)) return 27; // wooden church
+        if (h < 0.02 && biomeConsistent(tx, ty, 2, 2)) return 27; // church
         if (h < 0.04 && biomeConsistent(tx, ty, 2, 2)) return 28; // tavern
         if (h < 0.06 && biomeConsistent(tx, ty, 2, 2)) return 13; // log cabin
-        if (h < 0.08 && biomeConsistent(tx, ty, 1, 2)) return 29; // cottage
-        if (h < 0.10) return 24;                                  // fountain (walk-through 3x1)
-        if (h < 0.13) return 12;                                  // small bushes as yard
-        if (h < 0.16) return 5;                                   // well
+        if (h < 0.08) return 29;                                   // cottage
+        if (h < 0.10) return 15;                                   // small house
+        if (h < 0.12 && biomeConsistent(tx, ty, 2, 1)) return 24;  // fountain
+        if (h < 0.14) return 11;                                   // chest
+        if (h < 0.16) return 7;                                    // barrel
+        if (h < 0.18) return 33;                                   // barrel blue
+        if (h < 0.20) return 35;                                   // large barrel
+        if (h < 0.22) return 5;                                    // well
+        if (h < 0.26) return 12;                                   // small bush
       }
       if (h < 0.020) return 0;   // fruit tree
       if (h < 0.032) return 1;   // oval tree
       if (h < 0.040) return 23;  // autumn tree
-      if (h < 0.052) return 4;   // bush-tree
+      if (h < 0.052) return 4;   // bush
       if (h < 0.065) return 12;  // small bush
       return -1;
     }
 
-    if (bi === 1) { // FOREST — dense trees + rare cabin
+    if (bi === 1) { // FOREST
       if (settle > 0.86) {
         if (h < 0.02 && biomeConsistent(tx, ty, 2, 2)) return 13; // log cabin
-        if (h < 0.04 && biomeConsistent(tx, ty, 1, 2)) return 29; // cottage
+        if (h < 0.04) return 29;                                   // cottage
+        if (h < 0.05) return 15;                                   // small house
+        if (h < 0.06) return 11;                                   // chest
+        if (h < 0.07) return 34;                                   // barrel side
+        if (h < 0.08) return 37;                                   // cauldron
       }
       if (h < 0.08) return 0;    // fruit tree
       if (h < 0.14) return 1;    // oval tree
       if (h < 0.20) return 21;   // conifer
       if (h < 0.25) return 3;    // pine
       if (h < 0.30) return 23;   // autumn tree
-      if (h < 0.35) return 4;    // bush-tree
+      if (h < 0.35) return 4;    // bush
       if (h < 0.39) return 12;   // small bush
       return -1;
     }
 
-    if (bi === 2) { // ROCKY — ruins + graves + dead trees
+    if (bi === 2) { // ROCKY
       if (ruin > 0.72) {
-        if (h < 0.05 && biomeConsistent(tx, ty, 3, 2)) return 18; // castle wall
-        if (h < 0.12 && biomeConsistent(tx, ty, 1, 2)) return 20; // wall tower
-        if (h < 0.20 && biomeConsistent(tx, ty, 1, 2)) return 16; // solid tower
-        if (h < 0.32) return 8;                                   // pillars around
+        if (h < 0.10) return 20;                                   // wall tower fragment
+        if (h < 0.20) return 8;                                    // pillars
+        if (h < 0.28) return 9;                                    // altar
       }
       if (grave > 0.72) {
-        if (h < 0.08) return 26;                                  // stone cross
-        if (h < 0.16) return 6;                                   // gravestone
-        if (h < 0.20) return 25;                                  // angel statue
+        if (h < 0.08) return 26;                                   // stone cross
+        if (h < 0.16) return 6;                                    // gravestone
+        if (h < 0.20) return 25;                                   // angel statue
       }
-      if (h < 0.020) return 22;                                   // dead tree
-      if (h < 0.035) return 8;                                    // sparse pillars
-      if (h < 0.050) return 7;                                    // barrel
+      if (h < 0.020) return 22;                                    // dead tree
+      if (h < 0.030) return 8;                                     // sparse pillars
+      if (h < 0.038) return 38;                                    // pot dark
+      if (h < 0.046) return 40;                                    // green cauldron
+      if (h < 0.055) return 7;                                     // barrel
       return -1;
     }
 
-    if (bi === 3) { // DESERT — pyramids + cacti + palms
-      if (ruin > 0.80 && h < 0.03 && biomeConsistent(tx, ty, 3, 4)) return 17; // pyramid
-      if (settle > 0.75 && h < 0.10 && biomeConsistent(tx, ty, 2, 2)) return 14; // desert outpost
+    if (bi === 3) { // DESERT
+      if (ruin > 0.80 && h < 0.03 && biomeConsistent(tx, ty, 3, 5)) return 17; // pyramid
+      if (settle > 0.75) {
+        if (h < 0.05 && biomeConsistent(tx, ty, 2, 2)) return 14; // stone house outpost
+        if (h < 0.07) return 29;                                   // cottage
+        if (h < 0.09) return 7;                                    // barrel
+      }
       if (h < 0.055) return 10;  // cactus
-      if (h < 0.075) return 7;   // barrel
-      if (h < 0.090) return 2;   // palm oasis
+      if (h < 0.068) return 39;  // pot green
+      if (h < 0.085) return 2;   // palm
       return -1;
     }
 
-    // RUINS — themed pockets with churches, houses, castle
+    // RUINS (bi === 4)
     if (settle > 0.85) {
-      if (h < 0.008 && biomeConsistent(tx, ty, 5, 6)) return 32;  // castle — very rare
+      if (h < 0.008 && biomeConsistent(tx, ty, 6, 6)) return 32;  // castle
       if (h < 0.015 && biomeConsistent(tx, ty, 3, 3)) return 31;  // large church
-      if (h < 0.025 && biomeConsistent(tx, ty, 3, 2)) return 30;  // stone church
-      if (h < 0.040 && biomeConsistent(tx, ty, 3, 3)) return 15;  // big house
-      if (h < 0.060 && biomeConsistent(tx, ty, 2, 2)) return 14;  // stone house
-      if (h < 0.085 && biomeConsistent(tx, ty, 1, 2)) return 16;  // tower
-      if (h < 0.12) return 25;                                    // angel statue
-      if (h < 0.16) return 8;                                     // pillars in courtyard
+      if (h < 0.025 && biomeConsistent(tx, ty, 2, 2)) return 30;  // stone church
+      if (h < 0.040 && biomeConsistent(tx, ty, 2, 2)) return 14;  // stone house
+      if (h < 0.055 && biomeConsistent(tx, ty, 2, 2)) return 27;  // church
+      if (h < 0.07) return 29;                                     // cottage
+      if (h < 0.08) return 15;                                     // small house
+      if (h < 0.10) return 25;                                     // angel statue
+      if (h < 0.13) return 8;                                      // pillars
+      if (h < 0.15) return 11;                                     // chest
     }
     if (ruin > 0.75) {
-      if (h < 0.04 && biomeConsistent(tx, ty, 3, 2)) return 18;   // castle wall
-      if (h < 0.08 && biomeConsistent(tx, ty, 3, 2)) return 19;   // brick wall
-      if (h < 0.12 && biomeConsistent(tx, ty, 1, 2)) return 20;   // wall tower
-      if (h < 0.22) return 8;                                     // pillars
-      if (h < 0.28) return 9;                                     // altar
+      if (h < 0.06 && biomeConsistent(tx, ty, 2, 1)) return 19;   // brick accent
+      if (h < 0.12) return 20;                                     // wall tower fragment
+      if (h < 0.20) return 8;                                      // pillars
+      if (h < 0.26) return 9;                                      // altar
     }
     if (grave > 0.72) {
-      if (h < 0.10) return 26;                                    // stone cross
-      if (h < 0.25) return 6;                                     // gravestone
-      if (h < 0.30) return 25;                                    // angel statue
+      if (h < 0.10) return 26;                                     // stone cross
+      if (h < 0.25) return 6;                                      // gravestone
+      if (h < 0.30) return 25;                                     // angel statue
     }
-    if (h < 0.015) return 22;                                     // dead tree
-    if (h < 0.03) return 8;                                       // sparse pillars
-    if (h < 0.05) return 7;                                       // barrel
+    if (h < 0.015) return 22;                                      // dead tree
+    if (h < 0.025) return 8;                                       // sparse pillars
+    if (h < 0.032) return 36;                                      // barrel open
+    if (h < 0.039) return 34;                                      // barrel side
+    if (h < 0.047) return 7;                                       // barrel
+    if (h < 0.054) return 38;                                      // pot dark
     return -1;
   }
   // circle-vs-solid-object test (base box centered on the anchor cell's bottom)
