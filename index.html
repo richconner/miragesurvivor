@@ -552,27 +552,44 @@
     return vnoise(tx / WATER_SCALE + 11.3, ty / WATER_SCALE + 27.9) < 0.20;
   }
   // 4x3 water autotile in water.png. Map 4-cardinal grass-adjacency bitmask
-  // (bit0=N,bit1=S,bit2=E,bit3=W) → (col,row) in the water sheet.
-  //   Diagonals ignored — good enough for procedural blobs.
-  const WATER_UV = { // srcX, srcY per bitmask
-    0b0000: [32, 32], // pure water fill (no shore)
-    0b0001: [0,  32], // W shore
-    0b0010: [96, 32], // E shore
-    0b0100: [32, 64], // S shore
-    0b1000: [32, 0],  // N shore
-    0b1001: [0,  0],  // NW corner
-    0b1010: [96, 0],  // NE corner
-    0b0101: [0,  64], // SW corner
-    0b0110: [96, 64], // SE corner
-    // fallback for any other combo (N+S, E+W, 3-way, all): use fill
+  const WATER_UV = {
+    0b0000: [64, 32],  // fill
+    0b0001: [64,  0],  // N edge
+    0b0010: [64, 64],  // S edge
+    0b0100: [96, 32],  // E edge
+    0b1000: [32, 32],  // W edge
+    0b1001: [32,  0],  // NW outer corner
+    0b0101: [96,  0],  // NE outer corner
+    0b1010: [32, 64],  // SW outer corner
+    0b0110: [96, 64],  // SE outer corner
+    0b0011: [0,   0],  // N+S narrow → isolated
+    0b1100: [0,   0],  // E+W narrow → isolated
+    0b0111: [0,   0],  // peninsula E
+    0b1011: [0,   0],  // peninsula W
+    0b1101: [0,   0],  // peninsula S
+    0b1110: [0,   0],  // peninsula N
+    0b1111: [0,   0],  // isolated
   };
-  function waterUV(tx, ty) {
-    const mask =
-      ((!isWaterCell(tx, ty-1)) << 0) |
-      ((!isWaterCell(tx, ty+1)) << 1) |
-      ((!isWaterCell(tx+1, ty)) << 2) |
-      ((!isWaterCell(tx-1, ty)) << 3);
-    return WATER_UV[mask] || WATER_UV[0b0000];
+  const INNER_UV = [
+    [0,  96], // 0 = nw inner corner
+    [32, 96], // 1 = ne inner corner
+    [64, 96], // 2 = sw inner corner
+    [96, 96], // 3 = se inner corner
+  ];
+  function waterTile(tx, ty) {
+    const n = isWaterCell(tx, ty-1), s = isWaterCell(tx, ty+1);
+    const e = isWaterCell(tx+1, ty), w = isWaterCell(tx-1, ty);
+    const mask = ((!n)<<0) | ((!s)<<1) | ((!e)<<2) | ((!w)<<3);
+    const main = WATER_UV[mask] || [0, 0];
+    if (mask !== 0) return [main];
+    const tiles = [];
+    if (n && w && !isWaterCell(tx-1, ty-1)) tiles.push(INNER_UV[0]);
+    if (n && e && !isWaterCell(tx+1, ty-1)) tiles.push(INNER_UV[1]);
+    if (s && w && !isWaterCell(tx-1, ty+1)) tiles.push(INNER_UV[2]);
+    if (s && e && !isWaterCell(tx+1, ty+1)) tiles.push(INNER_UV[3]);
+    if (tiles.length === 0) return [main];
+    if (tiles.length === 1) return tiles;
+    return [main, ...tiles];
   }
 
   // ---- Paths ----------------------------------------------------------
@@ -1419,8 +1436,9 @@
         ctx.drawImage(IMG.ground, groundIdx(bi,tx,ty)*32, 0, 32, 32, dx, dy, T, T);
         // Water autotile — overlays with grass-blended shore edges
         if (IMG.water && isWaterCell(tx, ty)) {
-          const uv = waterUV(tx, ty);
-          ctx.drawImage(IMG.water, uv[0], uv[1], 32, 32, dx, dy, T, T);
+          const tiles = waterTile(tx, ty);
+          for (let wt = 0; wt < tiles.length; wt++)
+            ctx.drawImage(IMG.water, tiles[wt][0], tiles[wt][1], 32, 32, dx, dy, T, T);
         } else {
           // Path patch — dirt tile w/ transparent grass edges (paths never overlay water)
           if (IMG.paths && isPathCell(tx, ty)) ctx.drawImage(IMG.paths, 3*32, 0, 32, 32, dx, dy, T, T);
