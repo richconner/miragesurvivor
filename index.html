@@ -657,7 +657,7 @@
   }
   // ---- Multi-tile objects (objects.png, bottom-aligned, drawn at 2x) ----
   //   sx = source x; w,h = native px; bw,bh = collision base (world px, 0 = walk-through)
-  const OBJ_SH = 128; // objects.png height
+  const OBJ_SH = 192; // objects.png height
   const OBJDEFS = [
     { sx:0,   w:96, h:96,  bw:34, bh:26 }, // 0 fruit tree (3x3)
     { sx:96,  w:64, h:96,  bw:28, bh:24 }, // 1 oval tree (2x3)
@@ -677,12 +677,21 @@
     { sx:640, w:96, h:96,  bw:86, bh:40 }, // 15 big house (3x3)
     { sx:736, w:32, h:64,  bw:26, bh:30 }, // 16 tower (1x2)
     { sx:768, w:96, h:128, bw:88, bh:56 }, // 17 pyramid (3x4)
-    // Wall ruins — pre-composed wall segments (top row = battlements/wall body,
-    // bottom row = archways/windows). Solid across the full base, so they act
-    // as landmark barriers you have to walk around.
     { sx:864,  w:96, h:64, bw:180, bh:26 }, // 18 castle wall + arch (3x2 gray stone)
     { sx:960,  w:96, h:64, bw:180, bh:26 }, // 19 brick + arch wall (3x2 red/tan)
-    { sx:1056, w:32, h:64, bw:56,  bh:26 }  // 20 wall tower fragment (1x2)
+    { sx:1056, w:32, h:64, bw:56,  bh:26 }, // 20 wall tower fragment (1x2)
+    { sx:1152, w:32, h:64, bw:16, bh:18 }, // 21 conifer (1x2)
+    { sx:1184, w:32, h:64, bw:14, bh:16 }, // 22 dead tree (1x2)
+    { sx:1216, w:32, h:64, bw:16, bh:18 }, // 23 autumn tree (1x2)
+    { sx:1248, w:96, h:32, bw:80, bh:26 }, // 24 fountain (3x1)
+    { sx:1344, w:32, h:32, bw:22, bh:22 }, // 25 angel statue (1x1)
+    { sx:1376, w:32, h:32, bw:12, bh:16 }, // 26 stone cross (1x1)
+    { sx:1408, w:64, h:64, bw:54, bh:30 }, // 27 wooden church (2x2)
+    { sx:1472, w:64, h:64, bw:54, bh:30 }, // 28 tavern (2x2)
+    { sx:1536, w:32, h:64, bw:26, bh:28 }, // 29 cottage (1x2)
+    { sx:1568, w:96, h:64, bw:86, bh:36 }, // 30 stone church (3x2)
+    { sx:1664, w:96, h:96, bw:86, bh:40 }, // 31 large church (3x3)
+    { sx:1760, w:160,h:192,bw:120,bh:80 }  // 32 castle (5x6)
   ];
   // Which object (if any) is anchored at this tile. Placement uses two gates:
   //   1) biome type (from biomeAt)
@@ -698,43 +707,58 @@
     const grave   = clusterAt(tx, ty, 2);
     const ruin    = clusterAt(tx, ty, 3);
 
-    if (bi === 0) { // MEADOW — SMALL farmsteads (not sprawling towns), mostly trees
-      if (settle > 0.82) { // rarer, tighter village pocket (was 0.72)
-        if (h < 0.04 && biomeConsistent(tx, ty, 2, 2)) return 13; // log cabin (was 0.10)
-        if (h < 0.08) return 12;                                  // small bushes as yard
-        if (h < 0.11) return 5;                                   // rare well
+    if (bi === 0) { // MEADOW — farmsteads + trees
+      if (settle > 0.82) {
+        if (h < 0.02 && biomeConsistent(tx, ty, 2, 2)) return 27; // wooden church
+        if (h < 0.04 && biomeConsistent(tx, ty, 2, 2)) return 28; // tavern
+        if (h < 0.06 && biomeConsistent(tx, ty, 2, 2)) return 13; // log cabin
+        if (h < 0.08 && biomeConsistent(tx, ty, 1, 2)) return 29; // cottage
+        if (h < 0.10) return 24;                                  // fountain (walk-through 3x1)
+        if (h < 0.13) return 12;                                  // small bushes as yard
+        if (h < 0.16) return 5;                                   // well
       }
       if (h < 0.020) return 0;   // fruit tree
       if (h < 0.032) return 1;   // oval tree
-      if (h < 0.044) return 4;   // bush-tree
-      if (h < 0.060) return 12;  // small bush
+      if (h < 0.040) return 23;  // autumn tree
+      if (h < 0.052) return 4;   // bush-tree
+      if (h < 0.065) return 12;  // small bush
       return -1;
     }
 
-    if (bi === 1) { // FOREST — dense trees + a very rare woodsman cabin
-      if (settle > 0.86 && h < 0.02 && biomeConsistent(tx, ty, 2, 2)) return 13; // even rarer
-      if (h < 0.11) return 0;
-      if (h < 0.20) return 1;
-      if (h < 0.27) return 3;    // pine
-      if (h < 0.34) return 4;
-      if (h < 0.38) return 12;
+    if (bi === 1) { // FOREST — dense trees + rare cabin
+      if (settle > 0.86) {
+        if (h < 0.02 && biomeConsistent(tx, ty, 2, 2)) return 13; // log cabin
+        if (h < 0.04 && biomeConsistent(tx, ty, 1, 2)) return 29; // cottage
+      }
+      if (h < 0.08) return 0;    // fruit tree
+      if (h < 0.14) return 1;    // oval tree
+      if (h < 0.20) return 21;   // conifer
+      if (h < 0.25) return 3;    // pine
+      if (h < 0.30) return 23;   // autumn tree
+      if (h < 0.35) return 4;    // bush-tree
+      if (h < 0.39) return 12;   // small bush
       return -1;
     }
 
-    if (bi === 2) { // ROCKY — ancient watchtower ruins in ruin clusters + small graves
+    if (bi === 2) { // ROCKY — ruins + graves + dead trees
       if (ruin > 0.72) {
         if (h < 0.05 && biomeConsistent(tx, ty, 3, 2)) return 18; // castle wall
         if (h < 0.12 && biomeConsistent(tx, ty, 1, 2)) return 20; // wall tower
         if (h < 0.20 && biomeConsistent(tx, ty, 1, 2)) return 16; // solid tower
         if (h < 0.32) return 8;                                   // pillars around
       }
-      if (grave > 0.72 && h < 0.20) return 6;                     // grave clusters
-      if (h < 0.025) return 8;                                    // sparse pillars elsewhere
-      if (h < 0.045) return 7;                                    // barrel
+      if (grave > 0.72) {
+        if (h < 0.08) return 26;                                  // stone cross
+        if (h < 0.16) return 6;                                   // gravestone
+        if (h < 0.20) return 25;                                  // angel statue
+      }
+      if (h < 0.020) return 22;                                   // dead tree
+      if (h < 0.035) return 8;                                    // sparse pillars
+      if (h < 0.050) return 7;                                    // barrel
       return -1;
     }
 
-    if (bi === 3) { // DESERT — pyramids ONLY in deep-desert cluster, cactus common
+    if (bi === 3) { // DESERT — pyramids + cacti + palms
       if (ruin > 0.80 && h < 0.03 && biomeConsistent(tx, ty, 3, 4)) return 17; // pyramid
       if (settle > 0.75 && h < 0.10 && biomeConsistent(tx, ty, 2, 2)) return 14; // desert outpost
       if (h < 0.055) return 10;  // cactus
@@ -743,12 +767,16 @@
       return -1;
     }
 
-    // RUINS — themed pockets, houses are LANDMARKS (rare), not carpeting.
-    if (settle > 0.85) { // rarer settlement pockets (was 0.72)
-      if (h < 0.015 && biomeConsistent(tx, ty, 3, 3)) return 15;  // big house — very rare
-      if (h < 0.035 && biomeConsistent(tx, ty, 2, 2)) return 14;  // stone house
-      if (h < 0.07 && biomeConsistent(tx, ty, 1, 2)) return 16;   // tower
-      if (h < 0.14) return 8;                                     // pillars in courtyard
+    // RUINS — themed pockets with churches, houses, castle
+    if (settle > 0.85) {
+      if (h < 0.008 && biomeConsistent(tx, ty, 5, 6)) return 32;  // castle — very rare
+      if (h < 0.015 && biomeConsistent(tx, ty, 3, 3)) return 31;  // large church
+      if (h < 0.025 && biomeConsistent(tx, ty, 3, 2)) return 30;  // stone church
+      if (h < 0.040 && biomeConsistent(tx, ty, 3, 3)) return 15;  // big house
+      if (h < 0.060 && biomeConsistent(tx, ty, 2, 2)) return 14;  // stone house
+      if (h < 0.085 && biomeConsistent(tx, ty, 1, 2)) return 16;  // tower
+      if (h < 0.12) return 25;                                    // angel statue
+      if (h < 0.16) return 8;                                     // pillars in courtyard
     }
     if (ruin > 0.75) {
       if (h < 0.04 && biomeConsistent(tx, ty, 3, 2)) return 18;   // castle wall
@@ -757,7 +785,12 @@
       if (h < 0.22) return 8;                                     // pillars
       if (h < 0.28) return 9;                                     // altar
     }
-    if (grave > 0.72 && h < 0.30) return 6;                       // cemetery
+    if (grave > 0.72) {
+      if (h < 0.10) return 26;                                    // stone cross
+      if (h < 0.25) return 6;                                     // gravestone
+      if (h < 0.30) return 25;                                    // angel statue
+    }
+    if (h < 0.015) return 22;                                     // dead tree
     if (h < 0.03) return 8;                                       // sparse pillars
     if (h < 0.05) return 7;                                       // barrel
     return -1;
