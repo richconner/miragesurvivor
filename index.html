@@ -134,6 +134,50 @@
 
   .final { font-size: clamp(16px,4vw,20px); color: #cdd4e6; margin: 4px 0 20px; line-height: 1.8; }
   .final b { color: #f0c040; }
+
+  /* Shop */
+  #shop { z-index: 15; }
+  #shop h2 { color: #f0c040; text-shadow: 0 0 14px rgba(240,192,64,0.5); margin-bottom: 4px; font-size: clamp(20px, 5vw, 30px); letter-spacing: 2px; }
+  .shop-gold { color: #f0c040; font-size: 18px; font-weight: 700; margin-bottom: 14px; }
+  .shop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; max-width: 660px; width: 100%; }
+  .shop-item {
+    background: #141a2b; border: 2px solid #2a3350; border-radius: 10px;
+    padding: 10px 8px; text-align: center; cursor: pointer;
+    transition: transform .08s, border-color .12s, background .12s;
+  }
+  .shop-item:hover { transform: translateY(-2px); border-color: #f0c040; background: #1b2338; }
+  .shop-item.maxed { border-color: #3a5a3a; opacity: 0.6; cursor: default; }
+  .shop-item.maxed:hover { transform: none; border-color: #3a5a3a; background: #141a2b; }
+  .shop-item .shop-ic { font-size: 24px; }
+  .shop-item .shop-nm { font-weight: 700; font-size: 12px; margin: 4px 0 2px; color: #e0e4ef; }
+  .shop-item .shop-desc { font-size: 10px; color: #97a0b8; margin-bottom: 4px; }
+  .shop-item .shop-lv { font-size: 11px; color: #7ab6ff; }
+  .shop-item .shop-cost { font-size: 12px; color: #f0c040; font-weight: 700; margin-top: 4px; }
+  .shop-item .shop-cost.cant { color: #8a4040; }
+  .shop-back { background: none; border: none; color: #8a93a8; font-size: 13px; cursor: pointer; margin-top: 12px; }
+  .shop-back:hover { color: #cdd4e6; }
+  .gold-earned { color: #f0c040; font-size: 16px; margin: 6px 0; }
+
+  /* Character select */
+  #charSelect { z-index: 15; }
+  #charSelect h2 { color: #f0c040; text-shadow: 0 0 14px rgba(240,192,64,0.5); margin-bottom: 16px; font-size: clamp(20px, 5vw, 30px); letter-spacing: 2px; }
+  .char-grid { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; max-width: 780px; }
+  .char-card {
+    width: 110px; background: #141a2b; border: 2px solid #2a3350; border-radius: 12px;
+    padding: 12px 8px 10px; cursor: pointer; transition: transform .08s, border-color .12s, background .12s;
+    text-align: center; position: relative;
+  }
+  .char-card:hover, .char-card:active { transform: translateY(-4px); border-color: #f0c040; background: #1b2338; }
+  .char-card.selected { border-color: #f0c040; background: #1f2a40; box-shadow: 0 0 16px rgba(240,192,64,0.4); }
+  .char-card.locked { border-color: #3a3040; opacity: 0.85; }
+  .char-card.locked:hover { border-color: #f0c040; opacity: 1; }
+  .char-card canvas { display: block; margin: 0 auto 8px; image-rendering: pixelated; }
+  .char-card .char-name { font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #e0e4ef; }
+  .char-card .char-weapon { font-size: 11px; color: #97a0b8; }
+  .char-card .char-weapon-ic { font-size: 18px; display: block; margin-bottom: 2px; }
+  #charConfirm { margin-top: 18px; }
+  .char-back { background: none; border: none; color: #8a93a8; font-size: 13px; cursor: pointer; margin-top: 10px; }
+  .char-back:hover { color: #cdd4e6; }
 </style>
 </head>
 <body>
@@ -171,15 +215,32 @@
     <div class="divider"></div>
     <div class="subtitle">The realm of Mirage is overrun. Stand your ground, hero.</div>
     <button class="btn" id="playBtn">ENTER</button>
+    <button class="btn secondary" id="shopBtn">UPGRADES</button>
     <div class="hiscore" id="menuHi"></div>
+    <div class="shop-gold" id="menuGold" style="margin-top:4px;font-size:15px;"></div>
     <div class="help">
       <b>Desktop:</b> WASD / Arrow keys to move &nbsp;·&nbsp; your weapons auto-attack<br>
       <b>Mobile:</b> touch &amp; drag anywhere to move<br>
       Grab the gold monsters drop to level up and pick new powers. Don't get overwhelmed!
     </div>
     <div class="credit">Art from <a href="https://www.mirageonlineclassic.com" target="_blank" rel="noopener">Mirage Online Classic</a></div>
-    <div class="version">v0.5.1</div>
+    <div class="version">v0.9.0</div>
   </div>
+</div>
+
+<div id="shop" class="overlay hidden">
+  <h2>UPGRADES</h2>
+  <div class="shop-gold" id="shopGold">Gold: 0</div>
+  <div class="shop-grid" id="shopGrid"></div>
+  <button class="shop-back" id="shopReset" style="color:#d04040;margin-top:14px;">Reset all upgrades (full refund)</button>
+  <button class="shop-back" id="shopBack">← Back</button>
+</div>
+
+<div id="charSelect" class="overlay hidden">
+  <h2>CHOOSE YOUR HERO</h2>
+  <div class="char-grid" id="charGrid"></div>
+  <button class="btn" id="charConfirm">PLAY</button>
+  <button class="char-back" id="charBack">← Back</button>
 </div>
 
 <div id="levelup" class="overlay hidden">
@@ -993,6 +1054,7 @@
   let dyingEnemies = [];
   let totalDmgDealt = 0, dpsWindow = [], heartbeatTimer = 0;
   let weaponKills = {};
+  let poisonClouds = [], iceWalls = [], secondWindUses = 0;
   const KILL_MILESTONES = [25, 50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000];
   let milestonePopups = [], nextMilestoneIdx = 0;
   function juice(shakeAmt, stopAmt) {
@@ -1002,6 +1064,159 @@
 
   // ---- Weapons / upgrades definitions ---------------------------------
   // Each weapon has a level; passive items modify player stats.
+  // ---- Character definitions -------------------------------------------
+  const CHARACTERS = [
+    { id:'knight',    name:'Knight',      row:0, weapon:'knife',   weaponName:'Throwing Dagger', ic:'🗡️', cost:0 },
+    { id:'mage',      name:'Mage',        row:1, weapon:'nova',    weaponName:'Frost Nova',      ic:'❄️', cost:500 },
+    { id:'darkknight', name:'Dark Knight', row:2, weapon:'orbit',  weaponName:'Spirit Orbs',     ic:'🔮', cost:750 },
+    { id:'icemage',   name:'Ice Mage',    row:3, weapon:'bolt',    weaponName:'Chain Lightning', ic:'⚡', cost:1000 },
+    { id:'monk',      name:'Monk',        row:4, weapon:'slam',    weaponName:'Ground Slam',     ic:'💥', cost:1500 },
+    { id:'ranger',    name:'Ranger',      row:5, weapon:'pizza',   weaponName:'Returning Axe',   ic:'🪓', cost:2000 }
+  ];
+  let selectedChar = 0;
+  let heroRow = 0;
+  const CHARS_KEY = 'mirage_chars';
+  let unlockedChars = { knight: true };
+
+  function loadCharsData() {
+    try { const d = JSON.parse(CG.getItem(CHARS_KEY) || '{}'); if (d.knight) unlockedChars = d; } catch(e) {}
+  }
+  function saveCharsData() { CG.setItem(CHARS_KEY, JSON.stringify(unlockedChars)); }
+
+  function buildCharGrid() {
+    const grid = document.getElementById('charGrid');
+    grid.innerHTML = '';
+    CHARACTERS.forEach((ch, i) => {
+      const owned = !!unlockedChars[ch.id];
+      const card = document.createElement('div');
+      card.className = 'char-card' + (i === selectedChar && owned ? ' selected' : '') + (!owned ? ' locked' : '');
+      const cv = document.createElement('canvas');
+      cv.width = 64; cv.height = 64;
+      cv.style.width = '64px'; cv.style.height = '64px';
+      if (IMG.hero) {
+        const g = cv.getContext('2d');
+        g.imageSmoothingEnabled = false;
+        g.drawImage(IMG.hero, DIRCOL.down * 32, ch.row * 32, 32, 32, 0, 0, 64, 64);
+        if (!owned) { g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(0, 0, 64, 64); }
+      }
+      card.appendChild(cv);
+      const wic = document.createElement('span'); wic.className = 'char-weapon-ic'; wic.textContent = owned ? ch.ic : '🔒';
+      const nm = document.createElement('div'); nm.className = 'char-name'; nm.textContent = ch.name;
+      const wp = document.createElement('div'); wp.className = 'char-weapon';
+      wp.textContent = owned ? ch.weaponName : ch.cost + ' gold';
+      if (!owned) wp.style.color = metaGold >= ch.cost ? '#f0c040' : '#8a4040';
+      card.appendChild(wic); card.appendChild(nm); card.appendChild(wp);
+      card.onclick = () => {
+        if (owned) { selectedChar = i; buildCharGrid(); }
+        else if (metaGold >= ch.cost) {
+          metaGold -= ch.cost;
+          unlockedChars[ch.id] = true;
+          saveCharsData(); saveShopData(); refreshGoldDisplay();
+          selectedChar = i;
+          buildCharGrid();
+          Audio2.init(); Audio2.pickup();
+        }
+      };
+      grid.appendChild(card);
+    });
+  }
+
+  // ---- Meta-shop (persistent upgrades) ---------------------------------
+  const GOLD_KEY = 'mirage_gold';
+  const SHOP_KEY = 'mirage_shop';
+  let metaGold = 0;
+  let runGold = 0;
+
+  const SHOP_UPGRADES = [
+    { id:'s_maxhp',    name:'Max Health',    ic:'❤️', max:10, cost:i=>20+i*25,  desc:'+10 max HP per level' },
+    { id:'s_damage',   name:'Attack Power',  ic:'⚔️', max:10, cost:i=>25+i*30,  desc:'+5% weapon damage' },
+    { id:'s_speed',    name:'Move Speed',    ic:'👢', max:8,  cost:i=>20+i*20,  desc:'+3% movement speed' },
+    { id:'s_armor',    name:'Toughness',     ic:'🛡️', max:8,  cost:i=>30+i*25,  desc:'-1 damage from all hits' },
+    { id:'s_magnet',   name:'Magnetism',     ic:'🧲', max:6,  cost:i=>15+i*20,  desc:'+10% pickup radius' },
+    { id:'s_cooldown', name:'Haste',         ic:'⏳', max:8,  cost:i=>30+i*30,  desc:'-2% weapon cooldown' },
+    { id:'s_crit',     name:'Precision',     ic:'🎯', max:6,  cost:i=>35+i*35,  desc:'+2% crit chance' },
+    { id:'s_xp',       name:'Wisdom',        ic:'📗', max:6,  cost:i=>25+i*25,  desc:'+5% XP gain' },
+    { id:'s_regen',    name:'Recovery',       ic:'💚', max:6,  cost:i=>30+i*30,  desc:'+0.15 HP/s regen' },
+    { id:'s_greed',    name:'Greed',         ic:'💰', max:5,  cost:i=>40+i*40,  desc:'+10% gold earned' },
+    { id:'s_area',     name:'Blast Radius',  ic:'🔆', max:6,  cost:i=>30+i*30,  desc:'+5% area of effect' },
+    { id:'s_projspd',  name:'Velocity',      ic:'💫', max:6,  cost:i=>25+i*25,  desc:'+5% projectile speed' },
+    { id:'s_dodge',    name:'Evasion',       ic:'💨', max:5,  cost:i=>40+i*40,  desc:'+2% dodge chance' },
+    { id:'s_knockback',name:'Impact',        ic:'🥊', max:5,  cost:i=>30+i*30,  desc:'+5% knockback force' },
+    { id:'s_luck',     name:'Fortune',       ic:'🍀', max:5,  cost:i=>35+i*35,  desc:'+8% better drop rates' },
+    { id:'s_startlvl', name:'Head Start',    ic:'⭐', max:3,  cost:i=>80+i*80,  desc:'Start each run +1 level' }
+  ];
+
+  let shopLevels = {};
+
+  function loadShopData() {
+    metaGold = parseInt(CG.getItem(GOLD_KEY) || '0', 10) || 0;
+    try { shopLevels = JSON.parse(CG.getItem(SHOP_KEY) || '{}'); } catch(e) { shopLevels = {}; }
+    for (const u of SHOP_UPGRADES) if (!shopLevels[u.id]) shopLevels[u.id] = 0;
+  }
+
+  function saveShopData() {
+    CG.setItem(GOLD_KEY, String(metaGold));
+    CG.setItem(SHOP_KEY, JSON.stringify(shopLevels));
+  }
+
+  function refreshGoldDisplay() {
+    const menuGold = document.getElementById('menuGold');
+    if (menuGold) menuGold.textContent = metaGold > 0 ? 'Gold: ' + metaGold : '';
+    const shopGold = document.getElementById('shopGold');
+    if (shopGold) shopGold.textContent = 'Gold: ' + metaGold;
+  }
+
+  function buildShopGrid() {
+    const grid = document.getElementById('shopGrid');
+    grid.innerHTML = '';
+    for (const u of SHOP_UPGRADES) {
+      const lv = shopLevels[u.id] || 0;
+      const maxed = lv >= u.max;
+      const cost = maxed ? 0 : u.cost(lv);
+      const canBuy = !maxed && metaGold >= cost;
+      const item = document.createElement('div');
+      item.className = 'shop-item' + (maxed ? ' maxed' : '');
+      const costClass = canBuy ? 'shop-cost' : 'shop-cost cant';
+      item.innerHTML = '<div class="shop-ic">' + u.ic + '</div>'
+        + '<div class="shop-nm">' + u.name + '</div>'
+        + '<div class="shop-desc">' + u.desc + '</div>'
+        + '<div class="shop-lv">' + (maxed ? 'MAX' : 'Lv ' + lv + '/' + u.max) + '</div>'
+        + (maxed ? '' : '<div class="' + costClass + '">' + cost + ' gold</div>');
+      if (!maxed) {
+        item.onclick = () => {
+          if (metaGold >= cost) {
+            metaGold -= cost;
+            shopLevels[u.id] = lv + 1;
+            saveShopData();
+            refreshGoldDisplay();
+            buildShopGrid();
+            Audio2.init(); Audio2.pickup();
+          }
+        };
+      }
+      grid.appendChild(item);
+    }
+  }
+
+  function applyMetaUpgrades() {
+    const s = shopLevels;
+    player.metaMaxHpBonus = (s.s_maxhp || 0) * 10;
+    player.metaDmg = 1 + (s.s_damage || 0) * 0.05;
+    player.metaSpeed = 1 + (s.s_speed || 0) * 0.03;
+    player.metaArmor = (s.s_armor || 0);
+    player.metaMagnet = 1 + (s.s_magnet || 0) * 0.10;
+    player.metaCd = 1 - (s.s_cooldown || 0) * 0.02;
+    player.metaCrit = (s.s_crit || 0) * 0.02;
+    player.metaXp = 1 + (s.s_xp || 0) * 0.05;
+    player.metaRegen = (s.s_regen || 0) * 0.15;
+    player.metaGreed = 1 + (s.s_greed || 0) * 0.10;
+    player.metaArea = 1 + (s.s_area || 0) * 0.05;
+    player.metaProjSpd = 1 + (s.s_projspd || 0) * 0.05;
+    player.metaDodge = (s.s_dodge || 0) * 0.02;
+    player.metaKb = 1 + (s.s_knockback || 0) * 0.05;
+    player.metaLuck = 1 + (s.s_luck || 0) * 0.08;
+  }
+
   function makeUpgradePool() {
     return {
       // WEAPONS (Mirage spells & arms)
@@ -1019,6 +1234,18 @@
                  desc:'Lobs a fireball that bursts for big area damage.' },
       pizza:   { kind:'weapon', name:'Returning Axe', ic:'🪓', lvl:0, max:6,
                  desc:'Throws an axe that flies out and returns — hits twice.' },
+      slam:    { kind:'weapon', name:'Ground Slam', ic:'💥', lvl:0, max:6,
+                 desc:'AoE shockwave that knocks enemies back.' },
+      poison:  { kind:'weapon', name:'Poison Cloud', ic:'☠️', lvl:0, max:6,
+                 desc:'Drops toxic puddles that linger and damage over time.' },
+      missile: { kind:'weapon', name:'Homing Missile', ic:'🚀', lvl:0, max:6,
+                 desc:'Slow-firing homing projectiles that never miss.' },
+      shield:  { kind:'weapon', name:'Shield Bash', ic:'🛡️', lvl:0, max:6,
+                 desc:'Frontal cone knockback + stun. Great crowd control.' },
+      lstrike: { kind:'weapon', name:'Lightning Strike', ic:'🌩️', lvl:0, max:6,
+                 desc:'Random lightning bolts strike nearby enemies.' },
+      icewall: { kind:'weapon', name:'Ice Wall', ic:'🧊', lvl:0, max:6,
+                 desc:'Drops a barrier behind you that blocks & slows enemies.' },
       // PERKS (passive boosts)
       power:   { kind:'passive', name:'Strength', ic:'⚔️', lvl:0, max:5,
                  desc:'+18% weapon damage.' },
@@ -1032,11 +1259,30 @@
                  desc:'+25 max health and heal.' },
       regen:   { kind:'passive', name:'Regeneration', ic:'💚', lvl:0, max:4,
                  desc:'+0.4 health/sec recovery.' },
-      // NEW mechanics
       crit:    { kind:'passive', name:'Critical Strike', ic:'🎯', lvl:0, max:5,
                  desc:'+8% crit chance (double damage).' },
       cram:    { kind:'passive', name:'Fortune', ic:'💰', lvl:0, max:4,
-                 desc:'+20% gold from every pickup.' }
+                 desc:'+20% gold from every pickup.' },
+      thorns:  { kind:'passive', name:'Thorns', ic:'🌹', lvl:0, max:5,
+                 desc:'Reflect 10% of damage taken back to attackers.' },
+      lifesteal:{ kind:'passive', name:'Lifesteal', ic:'🩸', lvl:0, max:5,
+                 desc:'Heal 2% of damage dealt (max 3 HP/s).' },
+      dodge:   { kind:'passive', name:'Dodge', ic:'💨', lvl:0, max:5,
+                 desc:'+5% chance to avoid a hit entirely.' },
+      xpboost: { kind:'passive', name:'XP Boost', ic:'📗', lvl:0, max:4,
+                 desc:'+15% XP from gem pickups.' },
+      armor:   { kind:'passive', name:'Armor', ic:'🛡️', lvl:0, max:5,
+                 desc:'-3 flat damage from every hit (min 1).' },
+      area:    { kind:'passive', name:'Blast Radius', ic:'🔆', lvl:0, max:4,
+                 desc:'+15% area of effect on all weapons.' },
+      projspd: { kind:'passive', name:'Projectile Speed', ic:'💫', lvl:0, max:5,
+                 desc:'+15% projectile speed & orb spin.' },
+      secondwind:{ kind:'passive', name:'Second Wind', ic:'💖', lvl:0, max:3,
+                 desc:'Auto-revive at 50% HP when you die (1 use per level).' },
+      luck:    { kind:'passive', name:'Luck', ic:'🍀', lvl:0, max:4,
+                 desc:'Better drop rates for heal orbs, bombs & loot.' },
+      knockback:{ kind:'passive', name:'Knockback', ic:'🥊', lvl:0, max:4,
+                 desc:'+25% knockback on all hits.' }
     };
   }
   let up;
@@ -1060,9 +1306,17 @@
     weaponKills = {};
     shake = 0; hitStop = 0; manualPause = false;
     // Weapon timers keyed by weapon id
-    weaponTimers = { knife:0, orbit:0, nova:0, bolt:0, garlic:0, balloon:0, pizza:0 };
-    // start with spitballs
-    up.knife.lvl = 1;
+    weaponTimers = { knife:0, orbit:0, nova:0, bolt:0, garlic:0, balloon:0, pizza:0, slam:0, poison:0, missile:0, shield:0, lstrike:0, icewall:0 };
+    poisonClouds = []; iceWalls = []; secondWindUses = 0;
+    runGold = 0;
+    // start with selected character's weapon
+    const ch = CHARACTERS[selectedChar];
+    heroRow = ch.row;
+    up[ch.weapon].lvl = 1;
+    applyMetaUpgrades();
+    recalcPassives();
+    const headStart = shopLevels.s_startlvl || 0;
+    for (let i = 0; i < headStart; i++) { level++; queueLevelUp(); }
     refreshInventory();
     state = 'playing';
     show('hud'); hide('menu'); hide('gameover'); hide('levelup'); hide('menuScene');
@@ -1076,7 +1330,7 @@
   let xp = 0, level = 1, xpNext = 5;
 
   function gainXp(n) {
-    xp += n;
+    xp += n * (player.xpMul || 1);
     while (xp >= xpNext) {
       xp -= xpNext; level++;
       xpNext = Math.floor(5 + level * 3.2 + level*level*0.35);
@@ -1151,16 +1405,28 @@
   }
 
   function recalcPassives() {
-    player.dmg = 1 + up.power.lvl * 0.18;
-    player.speedMul = 1 + up.haste.lvl * 0.12;
-    player.cdMul = Math.max(0.35, 1 - up.cooldown.lvl * 0.12);
-    player.magnet = 90 * (1 + up.magnet.lvl * 0.4);
-    const targetMax = 100 + up.vitality.lvl * 25;
+    const md = player.metaDmg || 1, ms = player.metaSpeed || 1, mc = player.metaCd || 1;
+    const mm = player.metaMagnet || 1, mxp = player.metaXp || 1;
+    player.dmg = (1 + up.power.lvl * 0.18) * md;
+    player.speedMul = (1 + up.haste.lvl * 0.12) * ms;
+    player.cdMul = Math.max(0.35, (1 - up.cooldown.lvl * 0.12) * mc);
+    player.magnet = 90 * (1 + up.magnet.lvl * 0.4) * mm;
+    const baseMax = 100 + (player.metaMaxHpBonus || 0);
+    const targetMax = baseMax + up.vitality.lvl * 25;
     if (targetMax > player.maxHp) { player.hp += (targetMax - player.maxHp); }
     player.maxHp = targetMax;
-    player.regen = up.regen.lvl * 0.4;
-    player.critChance = up.crit.lvl * 0.08;
-    player.cashMul = 1 + up.cram.lvl * 0.2;
+    player.regen = up.regen.lvl * 0.4 + (player.metaRegen || 0);
+    player.critChance = up.crit.lvl * 0.08 + (player.metaCrit || 0);
+    player.cashMul = (1 + up.cram.lvl * 0.2) * (player.metaGreed || 1);
+    player.thorns = up.thorns.lvl * 0.10;
+    player.lifesteal = up.lifesteal.lvl * 0.02;
+    player.dodgeChance = up.dodge.lvl * 0.05 + (player.metaDodge || 0);
+    player.xpMul = (1 + up.xpboost.lvl * 0.15) * mxp;
+    player.armorFlat = up.armor.lvl * 3 + (player.metaArmor || 0);
+    player.areaMul = (1 + up.area.lvl * 0.15) * (player.metaArea || 1);
+    player.projSpd = (1 + up.projspd.lvl * 0.15) * (player.metaProjSpd || 1);
+    player.luckMul = (1 + up.luck.lvl * 0.5) * (player.metaLuck || 1);
+    player.kbMul = (1 + up.knockback.lvl * 0.25) * (player.metaKb || 1);
   }
 
   // ---- Enemy spawning -------------------------------------------------
@@ -1240,7 +1506,13 @@
     e.hp -= dmg; e.hit = 0.08;
     totalDmgDealt += dmg;
     dpsWindow.push({ t: gameTime, v: dmg });
-    if (kx || ky) { e.x += kx; e.y += ky; }
+    if (player.lifesteal > 0 && player.lsPool > 0) {
+      const lsAmt = Math.min(dmg * player.lifesteal, player.lsPool);
+      player.hp = Math.min(player.maxHp, player.hp + lsAmt);
+      player.lsPool -= lsAmt;
+    }
+    const kbm = player.kbMul || 1;
+    if (kx || ky) { e.x += kx * kbm; e.y += ky * kbm; }
     damageTexts.push({ x:e.x, y:e.y - e.r, t:0.5, v:dmg, crit, streak: streakActive });
     Audio2.hit();
     if (e.hp <= 0) killEnemy(e);
@@ -1271,9 +1543,11 @@
       orbs.push({ x:e.x, y:e.y, type:'heal', r:12, t:20 });
       CG.happytime(); juice(16, 0.08);
     } else {
+      const lk = player.luckMul || 1;
       const r = Math.random();
-      if (r < 0.004) orbs.push({ x:e.x, y:e.y, type:'bomb', r:10, t:15 }); // rare screen-clear
-      else if (r < 0.02) orbs.push({ x:e.x, y:e.y, type:'loot', r:11, t:18 }); // grab all gold
+      if (r < 0.004 * lk) orbs.push({ x:e.x, y:e.y, type:'bomb', r:10, t:15 });
+      else if (r < 0.02 * lk) orbs.push({ x:e.x, y:e.y, type:'loot', r:11, t:18 });
+      else if (r < 0.025 * lk) orbs.push({ x:e.x, y:e.y, type:'heal', r:10, t:15 });
     }
   }
 
@@ -1286,6 +1560,8 @@
   // ---- Weapons firing -------------------------------------------------
   function updateWeapons(dt) {
     const cd = streakActive ? player.cdMul * 0.375 : player.cdMul;
+    const ps = player.projSpd || 1;
+    const kb = player.kbMul || 1;
 
     // Throwing Dagger (auto-aims at the nearest approaching monster)
     if (up.knife.lvl > 0) {
@@ -1299,7 +1575,7 @@
         for (let i=0;i<count;i++) {
           const spread = (i - (count-1)/2) * 0.16;
           const a = baseA + spread;
-          projectiles.push({ x:player.x, y:player.y, vx:Math.cos(a)*440, vy:Math.sin(a)*440,
+          projectiles.push({ x:player.x, y:player.y, vx:Math.cos(a)*440*ps, vy:Math.sin(a)*440*ps,
             r:6, dmg:(6+up.knife.lvl*3)*player.dmg, life:1.1, pierce:1+Math.floor(up.knife.lvl/3), hitSet:new Set(), kind:'knife' });
         }
         Audio2.shoot();
@@ -1314,7 +1590,7 @@
         const tgt = nearestEnemy(player.x, player.y, 520);
         if (tgt) {
           const a = Math.atan2(tgt.y-player.y, tgt.x-player.x);
-          projectiles.push({ x:player.x, y:player.y, vx:Math.cos(a)*520, vy:Math.sin(a)*520,
+          projectiles.push({ x:player.x, y:player.y, vx:Math.cos(a)*520*ps, vy:Math.sin(a)*520*ps,
             r:7, dmg:(10+up.bolt.lvl*5)*player.dmg, life:1.4, pierce:1, chain:2+up.bolt.lvl, hitSet:new Set(), kind:'bolt' });
           Audio2.shoot();
         }
@@ -1326,7 +1602,7 @@
       weaponTimers.nova -= dt;
       if (weaponTimers.nova <= 0) {
         weaponTimers.nova = 2.4 * cd;
-        const radius = 90 + up.nova.lvl * 26;
+        const radius = (90 + up.nova.lvl * 26) * (player.areaMul || 1);
         particles.push({ x:player.x, y:player.y, ring:true, r:10, maxR:radius, t:0.4, c:'#8fd8ff' });
         Audio2.tone(70, 0.3, 'sine', 0.3, 40); juice(5, 0);
         for (const e of enemies) {
@@ -1348,9 +1624,9 @@
         const ang = tgt ? Math.atan2(tgt.y-player.y, tgt.x-player.x) : rand(0,TAU);
         const range = tgt ? Math.min(420, Math.hypot(tgt.x-player.x, tgt.y-player.y)) : 260;
         projectiles.push({ x:player.x, y:player.y,
-          vx:Math.cos(ang)*range/0.6, vy:Math.sin(ang)*range/0.6,
+          vx:Math.cos(ang)*range/0.6*ps, vy:Math.sin(ang)*range/0.6*ps,
           r:8, dmg:(20+up.balloon.lvl*10)*player.dmg, life:0.6, pierce:1e9, hitSet:new Set(),
-          kind:'balloon', splash:70+up.balloon.lvl*12 });
+          kind:'balloon', splash:(70+up.balloon.lvl*12) * (player.areaMul || 1) });
       }
     }
 
@@ -1365,10 +1641,129 @@
           const d = dist2(player.x, player.y, e.x, e.y);
           if (d < bestD) { bestD = d; a = Math.atan2(e.y - player.y, e.x - player.x); }
         }
-        projectiles.push({ x:player.x, y:player.y, vx:Math.cos(a)*380, vy:Math.sin(a)*380,
+        projectiles.push({ x:player.x, y:player.y, vx:Math.cos(a)*380*ps, vy:Math.sin(a)*380*ps,
           r:12, dmg:(9+up.pizza.lvl*5)*player.dmg, life:1.6, pierce:1e9, hitSet:new Set(),
           kind:'pizza', age:0, apex:0.55, returning:false, spin:0 });
         Audio2.shoot();
+      }
+    }
+
+    // Ground Slam (AoE shockwave around player)
+    if (up.slam.lvl > 0) {
+      weaponTimers.slam -= dt;
+      if (weaponTimers.slam <= 0) {
+        weaponTimers.slam = 2.8 * cd;
+        const radius = (100 + up.slam.lvl * 20) * (player.areaMul || 1);
+        particles.push({ x:player.x, y:player.y, ring:true, r:10, maxR:radius, t:0.4, c:'#c0956a' });
+        Audio2.tone(80, 0.25, 'sawtooth', 0.25, 45); juice(10, 0.06);
+        for (const e of enemies) {
+          const d = dist2(player.x, player.y, e.x, e.y);
+          if (d < radius * radius) {
+            const a = Math.atan2(e.y - player.y, e.x - player.x);
+            damageEnemy(e, (12 + up.slam.lvl * 6) * player.dmg, Math.cos(a) * 30, Math.sin(a) * 30, true);
+            e.slow = 0.8;
+          }
+        }
+      }
+    }
+
+    // Poison Cloud (drops lingering toxic puddle)
+    if (up.poison.lvl > 0) {
+      weaponTimers.poison -= dt;
+      if (weaponTimers.poison <= 0) {
+        weaponTimers.poison = 3.0 * cd;
+        const tgt = nearestEnemy(player.x, player.y, 400);
+        const cx = tgt ? tgt.x : player.x + (Math.random() - 0.5) * 120;
+        const cy = tgt ? tgt.y : player.y + (Math.random() - 0.5) * 120;
+        const pr = (50 + up.poison.lvl * 12) * (player.areaMul || 1);
+        poisonClouds.push({ x:cx, y:cy, r:pr, t:3 + up.poison.lvl * 0.5, dmg:(4 + up.poison.lvl * 2) * player.dmg, tick:0 });
+        Audio2.tone(150, 0.15, 'sine', 0.1, 80);
+      }
+    }
+
+    // Homing Missiles (slow but auto-targeting)
+    if (up.missile.lvl > 0) {
+      weaponTimers.missile -= dt;
+      if (weaponTimers.missile <= 0) {
+        weaponTimers.missile = 1.8 * cd;
+        const count = 1 + Math.floor(up.missile.lvl / 3);
+        const targets = [];
+        for (const e of enemies) targets.push({ e, d: dist2(player.x, player.y, e.x, e.y) });
+        targets.sort((a, b) => a.d - b.d);
+        for (let i = 0; i < count && i < targets.length; i++) {
+          const t = targets[i].e;
+          const a = Math.atan2(t.y - player.y, t.x - player.x);
+          projectiles.push({ x:player.x, y:player.y, vx:Math.cos(a)*200*ps, vy:Math.sin(a)*200*ps,
+            r:5, dmg:(15 + up.missile.lvl * 8) * player.dmg, life:3.0, pierce:0, hitSet:new Set(),
+            kind:'missile', target:t });
+          Audio2.tone(440, 0.06, 'square', 0.06, 660);
+        }
+      }
+    }
+
+    // Shield Bash (frontal cone knockback + stun)
+    if (up.shield.lvl > 0) {
+      weaponTimers.shield -= dt;
+      if (weaponTimers.shield <= 0) {
+        weaponTimers.shield = 2.2 * cd;
+        const bashAngle = Math.atan2(player.dirY, player.dirX);
+        const bashRange = (90 + up.shield.lvl * 15) * (player.areaMul || 1);
+        const bashArc = 0.8;
+        Audio2.tone(200, 0.12, 'square', 0.15, 100); juice(6, 0.04);
+        for (let i = 0; i < 8; i++) {
+          const sa = bashAngle + (Math.random() - 0.5) * bashArc;
+          const sr = Math.random() * bashRange;
+          particles.push({ x:player.x + Math.cos(sa)*sr, y:player.y + Math.sin(sa)*sr, vx:Math.cos(sa)*60, vy:Math.sin(sa)*60, t:0.25, c:'#a0c8ff', r:3 });
+        }
+        for (const e of enemies) {
+          const dx = e.x - player.x, dy = e.y - player.y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if (d > bashRange || d < 1) continue;
+          const ea = Math.atan2(dy, dx);
+          let diff = ea - bashAngle;
+          while (diff > Math.PI) diff -= TAU;
+          while (diff < -Math.PI) diff += TAU;
+          if (Math.abs(diff) < bashArc) {
+            damageEnemy(e, (8 + up.shield.lvl * 4) * player.dmg, Math.cos(ea)*40, Math.sin(ea)*40, false);
+            e.slow = 1.2;
+          }
+        }
+      }
+    }
+
+    // Lightning Strike (random bolts on nearby enemies)
+    if (up.lstrike.lvl > 0) {
+      weaponTimers.lstrike -= dt;
+      if (weaponTimers.lstrike <= 0) {
+        weaponTimers.lstrike = 1.4 * cd;
+        const count = 1 + Math.floor(up.lstrike.lvl / 2);
+        const targets = [];
+        for (const e of enemies) {
+          const d = dist2(player.x, player.y, e.x, e.y);
+          if (d < 400*400) targets.push({ e, d });
+        }
+        targets.sort((a, b) => a.d - b.d);
+        for (let i = 0; i < count && i < targets.length; i++) {
+          const e = targets[i].e;
+          damageEnemy(e, (10 + up.lstrike.lvl * 5) * player.dmg, 0, 0, true);
+          particles.push({ x:e.x, y:e.y - 40, vx:0, vy:40, t:0.2, c:'#f7e14a', r:4 });
+          particles.push({ x:e.x, y:e.y, ring:true, r:4, maxR:30, t:0.25, c:'#f7e14a' });
+        }
+        if (targets.length > 0) Audio2.tone(800, 0.08, 'square', 0.12, 200);
+      }
+    }
+
+    // Ice Wall (drops a barrier behind the player)
+    if (up.icewall.lvl > 0) {
+      weaponTimers.icewall -= dt;
+      if (weaponTimers.icewall <= 0) {
+        weaponTimers.icewall = 4.0 * cd;
+        const behindA = Math.atan2(-player.dirY, -player.dirX);
+        const wx = player.x + Math.cos(behindA) * 60;
+        const wy = player.y + Math.sin(behindA) * 60;
+        const wlen = (60 + up.icewall.lvl * 15) * (player.areaMul || 1);
+        iceWalls.push({ x:wx, y:wy, angle:behindA + Math.PI/2, len:wlen, t:3 + up.icewall.lvl * 0.8, dmg:(5 + up.icewall.lvl * 3) * player.dmg, tick:0 });
+        Audio2.tone(500, 0.1, 'sine', 0.1, 300);
       }
     }
 
@@ -1381,8 +1776,9 @@
     gameTime += dt;
     difficulty = gameTime / 25; // ramps over time
     if (shake > 0) shake = Math.max(0, shake - dt * 55); // decay screen shake
-    // regen
+    // regen + lifesteal pool refill (cap: 3 HP/s max from lifesteal)
     if (player.regen) player.hp = Math.min(player.maxHp, player.hp + player.regen*dt);
+    if (player.lifesteal > 0) player.lsPool = Math.min((player.lsPool||0) + 3 * dt, 3);
     if (player.iframe > 0) player.iframe -= dt;
     if (player.flash > 0) player.flash -= dt;
 
@@ -1461,11 +1857,18 @@
       const rr = (e.r + player.r);
       if (dist2(e.x,e.y,player.x,player.y) < rr*rr) {
         if (player.iframe <= 0) {
-          player.hp -= e.dmg;
-          player.iframe = 0.6; player.flash = 0.15;
-          dmgVignette = 0.45;
-          Audio2.hurt(); juice(11, 0.07);
-          if (player.hp <= 0) { gameOver(); return; }
+          if (player.dodgeChance > 0 && Math.random() < player.dodgeChance) {
+            damageTexts.push({ x:player.x, y:player.y - 20, t:0.5, v:'DODGE', crit:false, streak:false, dodge:true });
+            player.iframe = 0.15;
+          } else {
+            let dmg = Math.max(1, e.dmg - player.armorFlat);
+            player.hp -= dmg;
+            player.iframe = 0.6; player.flash = 0.15;
+            dmgVignette = 0.45;
+            Audio2.hurt(); juice(11, 0.07);
+            if (player.thorns > 0) damageEnemy(e, dmg * player.thorns, 0, 0);
+            if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+          }
         }
       }
     }
@@ -1489,10 +1892,16 @@
       if (dist2(s.x,s.y,player.x,player.y) < (player.r + s.r)*(player.r + s.r)) {
         s.life = 0;
         if (player.iframe <= 0) {
-          player.hp -= s.dmg; player.iframe = 0.6; player.flash = 0.15;
-          dmgVignette = 0.45;
-          Audio2.hurt(); juice(9, 0.05);
-          if (player.hp <= 0) { gameOver(); return; }
+          if (player.dodgeChance > 0 && Math.random() < player.dodgeChance) {
+            damageTexts.push({ x:player.x, y:player.y - 20, t:0.5, v:'DODGE', crit:false, streak:false, dodge:true });
+            player.iframe = 0.15;
+          } else {
+            let dmg = Math.max(1, s.dmg - player.armorFlat);
+            player.hp -= dmg; player.iframe = 0.6; player.flash = 0.15;
+            dmgVignette = 0.45;
+            Audio2.hurt(); juice(9, 0.05);
+            if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+          }
         }
       }
     }
@@ -1500,7 +1909,7 @@
 
     // Flame aura — damage over time + slow (no knockback, so it can't wall foes out)
     if (up.garlic.lvl > 0) {
-      const radius = 60 + up.garlic.lvl * 16;
+      const radius = (60 + up.garlic.lvl * 16) * (player.areaMul || 1);
       for (const e of enemies) {
         if (!e.boss && dist2(player.x,player.y,e.x,e.y) < radius*radius) {
           damageEnemy(e, (6+up.garlic.lvl*2.5)*player.dmg*dt, 0, 0);
@@ -1511,7 +1920,7 @@
 
     // Spirit orbs
     if (up.orbit.lvl > 0) {
-      orbitAngle += dt * 2.4;
+      orbitAngle += dt * 2.4 * (player.projSpd || 1);
       const n = 2 + up.orbit.lvl;
       const orad = 70;
       for (let i=0;i<n;i++) {
@@ -1521,7 +1930,10 @@
         for (const e of enemies) {
           const rr = e.r + 12;
           if (dist2(ox,oy,e.x,e.y) < rr*rr) {
-            damageEnemy(e, (8+up.orbit.lvl*3)*player.dmg*dt*3, 0,0);
+            if (!e.orbHit || e.orbHit <= 0) {
+              damageEnemy(e, (8+up.orbit.lvl*3)*player.dmg, 0,0, true);
+              e.orbHit = 0.3;
+            }
           }
         }
         for (const s of enemyShots) {
@@ -1532,7 +1944,42 @@
           }
         }
       }
+      for (const e of enemies) { if (e.orbHit > 0) e.orbHit -= dt; }
     }
+
+    // Poison clouds (lingering AoE)
+    for (const pc of poisonClouds) {
+      pc.t -= dt; pc.tick -= dt;
+      if (pc.tick <= 0) {
+        pc.tick = 0.4;
+        for (const e of enemies) {
+          if (dist2(pc.x, pc.y, e.x, e.y) < pc.r * pc.r) {
+            damageEnemy(e, pc.dmg * 0.4, 0, 0);
+            e.slow = 0.3;
+          }
+        }
+      }
+    }
+    poisonClouds = poisonClouds.filter(pc => pc.t > 0);
+
+    // Ice walls (barrier + slow + damage)
+    for (const w of iceWalls) {
+      w.t -= dt; w.tick -= dt;
+      if (w.tick <= 0) {
+        w.tick = 0.3;
+        const perpX = Math.cos(w.angle), perpY = Math.sin(w.angle);
+        for (const e of enemies) {
+          const dx = e.x - w.x, dy = e.y - w.y;
+          const along = dx * perpX + dy * perpY;
+          const across = Math.abs(dx * (-perpY) + dy * perpX);
+          if (Math.abs(along) < w.len / 2 && across < 20 + e.r) {
+            damageEnemy(e, w.dmg * 0.3, -perpY * 5, perpX * 5);
+            e.slow = 0.8;
+          }
+        }
+      }
+    }
+    iceWalls = iceWalls.filter(w => w.t > 0);
 
     // Projectiles
     for (const p of projectiles) {
@@ -1544,6 +1991,18 @@
           const a = Math.atan2(player.y-p.y, player.x-p.x);
           p.vx = Math.cos(a)*460; p.vy = Math.sin(a)*460;
           if (dist2(p.x,p.y,player.x,player.y) < 20*20) p.life = 0;
+        }
+      }
+      // Homing missile: steer toward target
+      if (p.kind === 'missile') {
+        const t = p.target;
+        if (t && !t.dead) {
+          const a = Math.atan2(t.y - p.y, t.x - p.x);
+          const spd = Math.hypot(p.vx, p.vy);
+          p.vx += Math.cos(a) * 600 * dt;
+          p.vy += Math.sin(a) * 600 * dt;
+          const ns = Math.hypot(p.vx, p.vy);
+          if (ns > 350) { p.vx = p.vx/ns*350; p.vy = p.vy/ns*350; }
         }
       }
       p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt;
@@ -1582,7 +2041,12 @@
     const mr = player.magnet;
     for (const g of gems) {
       const d2v = dist2(g.x,g.y,player.x,player.y);
-      if (d2v < mr*mr) {
+      if (g.lootSuck) {
+        const a = Math.atan2(player.y-g.y, player.x-g.x);
+        const spd = 900;
+        g.x += Math.cos(a)*spd*dt; g.y += Math.sin(a)*spd*dt;
+        g.vacuuming = true;
+      } else if (d2v < mr*mr) {
         const a = Math.atan2(player.y-g.y, player.x-g.x);
         const dd = Math.sqrt(d2v);
         const pull = clamp(400 - dd, 120, 400);
@@ -1596,7 +2060,7 @@
         g.x += (g.vx||0)*dt; g.y += (g.vy||0)*dt; g.vx*=0.9; g.vy*=0.9;
         g.vacuuming = false;
       }
-      if (d2v < (player.r+g.r)*(player.r+g.r)) { g.got = true; gainXp(g.v * player.cashMul); Audio2.pickup(); }
+      if (d2v < (player.r+g.r)*(player.r+g.r)) { g.got = true; const gv = g.v * player.cashMul; gainXp(gv); runGold += Math.ceil(gv); Audio2.pickup(); }
     }
     gems = gems.filter(g => !g.got);
 
@@ -1606,10 +2070,9 @@
       if (dist2(o.x,o.y,player.x,player.y) < (player.r+o.r+8)*(player.r+o.r+8)) {
         if (o.type==='heal') { player.hp = Math.min(player.maxHp, player.hp + 40); Audio2.revive(); }
         else if (o.type==='bomb') { for (const e of enemies) damageEnemy(e, 9999, 0,0); Audio2.boss(); juice(18, 0.12); }
-        else if (o.type==='loot') { // vacuum all gold on the ground
-          let total = 0; for (const g of gems) total += g.v;
-          gems = [];
-          if (total > 0) { gainXp(total * player.cashMul); Audio2.pickup(); juice(5, 0); }
+        else if (o.type==='loot') {
+          for (const g of gems) g.lootSuck = true;
+          Audio2.pickup(); juice(5, 0);
         }
         o.gone = true;
       }
@@ -1789,7 +2252,7 @@
       ctx.imageSmoothingEnabled = false;
       const flash = player.flash > 0 && Math.floor(player.flash*30)%2===0;
       if (flash) ctx.globalAlpha = 0.6;
-      ctx.drawImage(IMG.hero, fcol*32, 0, 32, 32, px - psize/2, py + bobY - psize*0.62, psize, psize);
+      ctx.drawImage(IMG.hero, fcol*32, heroRow*32, 32, 32, px - psize/2, py + bobY - psize*0.62, psize, psize);
       if (flash) ctx.globalAlpha = 1;
     } else {
       ctx.drawImage(Sprites.boy, px-24, py+bobY-24, 48, 48);
@@ -1827,6 +2290,35 @@
       }
     }
 
+    // Ice walls
+    for (const w of iceWalls) {
+      const sx = w.x - camX, sy = w.y - camY;
+      const alpha = Math.min(w.t / 0.5, 1) * 0.7;
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate(w.angle);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#8ad8ff';
+      ctx.shadowColor = '#4aa8ff'; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.roundRect(-w.len/2, -8, w.len, 16, 6); ctx.fill();
+      ctx.fillStyle = '#c8f0ff';
+      ctx.beginPath(); ctx.roundRect(-w.len/2 + 4, -4, w.len - 8, 8, 3); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // Poison clouds
+    for (const pc of poisonClouds) {
+      const sx = pc.x - camX, sy = pc.y - camY;
+      const alpha = Math.min(pc.t / 0.5, 1) * 0.3;
+      const grd = ctx.createRadialGradient(sx, sy, 0, sx, sy, pc.r);
+      grd.addColorStop(0, `rgba(80,200,40,${alpha})`);
+      grd.addColorStop(0.6, `rgba(40,160,20,${alpha * 0.6})`);
+      grd.addColorStop(1, 'rgba(20,100,10,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(sx, sy, pc.r, 0, TAU); ctx.fill();
+    }
+
     // Magnet pickup radius
     if (player.magnet > 50) {
       const mx = player.x - camX, my = player.y - camY;
@@ -1856,12 +2348,45 @@
     // orbs (heal / bomb / loot pickups)
     for (const o of orbs) {
       const sx=o.x-camX, sy=o.y-camY;
-      ctx.fillStyle = o.type==='heal' ? '#3ad06a' : o.type==='loot' ? '#ffd24a' : '#f0c040';
-      ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 14;
-      ctx.beginPath(); ctx.arc(sx,sy,o.r,0,TAU); ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#05060a'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(o.type==='heal'?'+':o.type==='loot'?'$':'★', sx, sy+0.5);
+      if (o.type === 'heal') {
+        const pulse = 1 + 0.1 * Math.sin(gameTime * 5);
+        const hr = o.r * 0.7 * pulse;
+        ctx.save();
+        ctx.shadowColor = '#ff2040'; ctx.shadowBlur = 16;
+        ctx.fillStyle = '#e01030';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy + hr * 0.6);
+        ctx.bezierCurveTo(sx - hr * 1.2, sy - hr * 0.3, sx - hr * 0.7, sy - hr * 1.3, sx, sy - hr * 0.5);
+        ctx.bezierCurveTo(sx + hr * 0.7, sy - hr * 1.3, sx + hr * 1.2, sy - hr * 0.3, sx, sy + hr * 0.6);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,180,180,0.5)';
+        ctx.beginPath(); ctx.arc(sx - hr*0.3, sy - hr*0.4, hr*0.25, 0, TAU); ctx.fill();
+        ctx.restore();
+      } else {
+        if (o.type === 'loot') {
+          ctx.save();
+          ctx.shadowColor = '#60d0ff'; ctx.shadowBlur = 18;
+          ctx.fillStyle = '#2090d0';
+          ctx.beginPath(); ctx.arc(sx,sy,o.r,0,TAU); ctx.fill();
+          ctx.shadowBlur = 0;
+          for (let i = 0; i < 4; i++) {
+            const a = gameTime * 3 + i * TAU/4;
+            const sr = o.r + 4 + Math.sin(gameTime*6+i)*3;
+            ctx.fillStyle = `rgba(100,210,255,${0.5+0.3*Math.sin(gameTime*5+i)})`;
+            ctx.beginPath(); ctx.arc(sx+Math.cos(a)*sr, sy+Math.sin(a)*sr, 2.5, 0, TAU); ctx.fill();
+          }
+          ctx.fillStyle = '#fff'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText('🧲', sx, sy+1);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = '#f0c040';
+          ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 14;
+          ctx.beginPath(); ctx.arc(sx,sy,o.r,0,TAU); ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#05060a'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText('★', sx, sy+0.5);
+        }
+      }
     }
 
     // enemy projectiles (from ranged monsters)
@@ -1947,6 +2472,12 @@
         ctx.fillStyle='#8a6a3a'; ctx.fillRect(-1.5,-p.r,3,p.r*2); // handle
         ctx.fillStyle='#cfd6e6'; ctx.beginPath(); ctx.moveTo(0,-p.r); ctx.quadraticCurveTo(p.r,-p.r*0.6,p.r*0.7,-p.r*0.1); ctx.lineTo(0,-p.r*0.3); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.moveTo(0,-p.r); ctx.quadraticCurveTo(-p.r,-p.r*0.6,-p.r*0.7,-p.r*0.1); ctx.lineTo(0,-p.r*0.3); ctx.closePath(); ctx.fill();
+      } else if (p.kind==='missile') { // homing missile
+        ctx.rotate(Math.atan2(p.vy, p.vx));
+        ctx.fillStyle='#d04030'; ctx.beginPath(); ctx.moveTo(p.r+2,0); ctx.lineTo(-p.r,-3); ctx.lineTo(-p.r,3); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='#ff8a40'; ctx.shadowColor='#ff6020'; ctx.shadowBlur=8;
+        ctx.beginPath(); ctx.arc(-p.r-2, 0, 3, 0, TAU); ctx.fill();
+        ctx.shadowBlur=0;
       } else {
         ctx.fillStyle='#e8e8f0'; ctx.beginPath(); ctx.arc(0,0,p.r,0,TAU); ctx.fill();
       }
@@ -1969,10 +2500,11 @@
     ctx.textAlign='center';
     for (const d of damageTexts) {
       ctx.globalAlpha = clamp(d.t*2,0,1);
-      if (d.crit) { ctx.fillStyle = '#ff5a5a'; ctx.font = 'bold 18px sans-serif'; }
+      if (d.dodge) { ctx.fillStyle = '#8af0ff'; ctx.font = 'bold 14px sans-serif'; }
+      else if (d.crit) { ctx.fillStyle = '#ff5a5a'; ctx.font = 'bold 18px sans-serif'; }
       else if (d.streak) { ctx.fillStyle = '#ff8830'; ctx.font = 'bold 15px sans-serif'; }
       else { ctx.fillStyle = '#ffd86b'; ctx.font = 'bold 13px sans-serif'; }
-      const txt = Math.round(d.v) + (d.crit ? '!' : '');
+      const txt = d.dodge ? 'DODGE' : Math.round(d.v) + (d.crit ? '!' : '');
       ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
       ctx.strokeText(txt, d.x-camX, d.y-camY);
       ctx.fillText(txt, d.x-camX, d.y-camY);
@@ -2111,6 +2643,9 @@
     score = liveScore();
     const isBest = score > hiScore;
     if (isBest) { hiScore = score; CG.setItem(HI_KEY, String(hiScore)); refreshHiScore(); }
+    metaGold += runGold;
+    saveShopData();
+    refreshGoldDisplay();
     const m = Math.floor(gameTime/60), s = Math.floor(gameTime%60);
     const avgDps = gameTime > 0 ? Math.round(totalDmgDealt / gameTime) : 0;
     const dmgStr = totalDmgDealt >= 1000 ? (totalDmgDealt/1000).toFixed(1) + 'k' : Math.round(totalDmgDealt);
@@ -2123,6 +2658,7 @@
        Level <b>${level}</b> &nbsp;·&nbsp; Enemies <b>${kills}</b><br>
        Total Damage <b>${dmgStr}</b> &nbsp;·&nbsp; Avg DPS <b>${avgDps}</b><br>
        ${weaponList ? 'Weapons: ' + weaponList + '<br>' : ''}
+       <span class="gold-earned">+${runGold} gold earned</span><br>
        Score <b>${score}</b>${isBest ? ' &nbsp;🏆 NEW BEST!' : ''}<br>
        <span style="color:#8a93a8;font-size:14px">Best: ${hiScore}</span>`;
     // Offer a one-time rewarded-ad revive (only when the SDK can serve ads).
@@ -2191,13 +2727,50 @@
   }
   function toMenu() {
     Audio2.stopMusic(); hide('pause'); hide('gameover');
-    show('menu'); show('menuScene'); initMenuScene(); state = 'menu'; manualPause = false; refreshHiScore();
+    show('menu'); show('menuScene'); initMenuScene(); state = 'menu'; manualPause = false; refreshHiScore(); refreshGoldDisplay();
   }
 
   // ---- Controls / buttons --------------------------------------------
   function updateMuteIcon() { document.getElementById('muteBtn').textContent = Audio2.muted ? '🔇' : '🔊'; }
 
-  document.getElementById('playBtn').onclick = newRun;
+  document.getElementById('playBtn').onclick = () => {
+    buildCharGrid();
+    hide('menu');
+    show('charSelect');
+  };
+  document.getElementById('charConfirm').onclick = () => {
+    hide('charSelect');
+    newRun();
+  };
+  document.getElementById('charBack').onclick = () => {
+    hide('charSelect');
+    show('menu');
+  };
+  document.getElementById('shopBtn').onclick = () => {
+    refreshGoldDisplay();
+    buildShopGrid();
+    hide('menu');
+    show('shop');
+  };
+  document.getElementById('shopReset').onclick = () => {
+    let refund = 0;
+    for (const u of SHOP_UPGRADES) {
+      const lv = shopLevels[u.id] || 0;
+      for (let i = 0; i < lv; i++) refund += u.cost(i);
+      shopLevels[u.id] = 0;
+    }
+    if (refund > 0) {
+      metaGold += refund;
+      saveShopData();
+      refreshGoldDisplay();
+      buildShopGrid();
+      Audio2.init(); Audio2.pickup();
+    }
+  };
+  document.getElementById('shopBack').onclick = () => {
+    hide('shop');
+    show('menu');
+  };
   document.getElementById('retryBtn').onclick = () => CG.midgameAd(newRun);
   document.getElementById('reviveBtn').onclick = doRevive;
   document.getElementById('menuBtn').onclick = toMenu;
@@ -2322,7 +2895,8 @@
       const heroX = (W / 2 - 16 * heroScale) | 0;
       const heroY = (H * 0.88 - 32 * heroScale) | 0;
       const frame = Math.floor(menuScene.scroll * 0.1) % 2;
-      g.drawImage(IMG.hero, dc + frame * 32, 0, 32, 32,
+      const menuCharRow = CHARACTERS[selectedChar].row;
+      g.drawImage(IMG.hero, dc + frame * 32, menuCharRow * 32, 32, 32,
         heroX, heroY, 32 * heroScale, 32 * heroScale);
     }
 
@@ -2375,7 +2949,10 @@
       loadImg('water.png'), loadImg('paths.png') ]);
     if (IMG.monsters) IMG.monstersW = makeWhite(IMG.monsters);
     hiScore = parseInt(CG.getItem(HI_KEY) || '0', 10) || 0;
+    loadShopData();
+    loadCharsData();
     refreshHiScore();
+    refreshGoldDisplay();
     Audio2.init(); updateMuteIcon();
     drawMenuPreview();
     initMenuScene();
