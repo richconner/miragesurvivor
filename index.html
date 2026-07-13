@@ -62,6 +62,7 @@
     text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
   .credit a { color: #c9302c; text-decoration: none; font-weight: 700; }
   .credit a:hover { text-decoration: underline; }
+  .version { color: #5a6278; font-size: 10px; margin-top: 8px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); letter-spacing: 0.5px; }
 
   #preview { display: none; }
   #menu .divider { width: min(320px, 60vw); height: 2px; margin: 0 auto 14px;
@@ -72,7 +73,7 @@
   #menu .menu-content { background: radial-gradient(ellipse at center, rgba(5,6,10,0.82) 0%, rgba(5,6,10,0.5) 70%, transparent 100%);
     padding: 30px 50px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; }
   .hiscore { color: #f0c040; font-weight: 700; margin-top: 10px; font-size: 15px; letter-spacing: 1px; }
-  .topbtns { position: fixed; top: 12px; right: 14px; z-index: 13; display: flex; gap: 8px; }
+  .topbtns { position: fixed; top: 30px; right: 60px; z-index: 13; display: flex; gap: 8px; }
   .iconbtn { background: rgba(20,26,43,0.8); border: 1px solid #2a3350; color: #cdd4e6;
     width: 42px; height: 42px; border-radius: 10px; font-size: 20px; cursor: pointer; }
   .iconbtn:active { transform: translateY(2px); }
@@ -102,9 +103,12 @@
   #hud { position: fixed; top: 0; left: 0; right: 0; z-index: 5; pointer-events: none; padding: 10px 14px; }
   .xpbar-wrap { height: 14px; background: #10131f; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 1px #263056; }
   .xpbar { height: 100%; width: 0%; background: linear-gradient(90deg, #2fa855, #6be09a); transition: width .15s; }
-  .bossbar-wrap { height: 6px; background: #10131f; border-radius: 4px; overflow: hidden; margin-top: 3px; box-shadow: inset 0 0 0 1px #3a1528; position: relative; }
-  .bossbar { height: 100%; width: 0%; background: linear-gradient(90deg, #8a2040, #e03060); transition: width .3s; }
-  .bossbar-label { position: absolute; right: 4px; top: -1px; font-size: 8px; color: #e06080; font-weight: 700; line-height: 8px; text-shadow: 0 1px 2px #000; }
+  .streakbar-wrap { height: 8px; background: #10131f; border-radius: 4px; overflow: hidden; margin-top: 3px; box-shadow: inset 0 0 0 1px #3a2810; position: relative; }
+  .streakbar { height: 100%; width: 0%; background: linear-gradient(90deg, #8a6020, #f0c040); transition: width .15s; }
+  .streakbar-wrap.active .streakbar { background: linear-gradient(90deg, #f0c040, #ffe070); animation: streakPulse 0.5s ease-in-out infinite; }
+  @keyframes streakPulse { 0%,100%{ opacity:0.7; } 50%{ opacity:1; } }
+  .streak-label { position: absolute; left: 0; right: 0; top: -1px; font-size: 8px; color: #c09030; font-weight: 700; line-height: 8px; text-shadow: 0 1px 2px #000; text-align: center; }
+  .streakbar-wrap.active .streak-label { color: #f0c040; }
   #hudrow { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 14px; font-weight: 700; text-shadow: 0 1px 3px #000; }
   #timer { font-size: 20px; }
   #lvl { color: #7ab6ff; }
@@ -137,7 +141,7 @@
 
 <div id="hud" class="hidden">
   <div class="xpbar-wrap"><div id="xpbar" class="xpbar"></div></div>
-  <div class="bossbar-wrap"><div id="bossbar" class="bossbar"></div><span id="bossLabel" class="bossbar-label">BOSS</span></div>
+  <div class="streakbar-wrap" id="streakWrap"><div id="streakbar" class="streakbar"></div><span id="streakLabel" class="streak-label">Rampage: 0/250 kills</span></div>
   <div id="hudrow">
     <span id="lvl">Lv 1</span>
     <span id="timer">00:00</span>
@@ -174,6 +178,7 @@
       Grab the gold monsters drop to level up and pick new powers. Don't get overwhelmed!
     </div>
     <div class="credit">Art from <a href="https://www.mirageonlineclassic.com" target="_blank" rel="noopener">Mirage Online Classic</a></div>
+    <div class="version">v0.5.1</div>
   </div>
 </div>
 
@@ -336,15 +341,17 @@
       if (hp) { const f = this.ac.createBiquadFilter(); f.type='highpass'; f.frequency.value=hp; src.connect(f); node=f; }
       node.connect(g); g.connect(this.master); src.start(t);
     },
-    shoot()   { this.tone(520, 0.06, 'square', 0.05, 340); },
-    hit()     { const now = performance.now(); if (now - this.lastHit < 45) return; this.lastHit = now; this.noise(0.05, 0.10, 1200); },
-    kill()    { this.tone(200, 0.12, 'triangle', 0.18, 90); },
-    pickup()  { this.tone(660, 0.08, 'sine', 0.14, 990); },
+    rp(f, v) { return f * (1 + (Math.random()-0.5) * v); },
+    shoot()   { const r = this.rp.bind(this); this.tone(r(520,0.15), 0.06, 'square', 0.05, r(340,0.15)); },
+    hit()     { const now = performance.now(); if (now - this.lastHit < 45) return; this.lastHit = now; this.noise(0.05, 0.10, 900 + Math.random()*600); },
+    kill()    { const r = this.rp.bind(this); this.tone(r(200,0.2), 0.12, 'triangle', 0.18, r(90,0.2)); },
+    pickup()  { const r = this.rp.bind(this); this.tone(r(660,0.1), 0.08, 'sine', 0.14, r(990,0.1)); },
     levelup() { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.tone(f,0.14,'triangle',0.2),i*70)); },
     hurt()    { this.tone(300, 0.18, 'sawtooth', 0.22, 70); this.noise(0.12, 0.12, 400); },
     boss()    { this.tone(90, 0.5, 'sawtooth', 0.28, 60); },
     revive()  { [392,523,659,880].forEach((f,i)=>setTimeout(()=>this.tone(f,0.16,'sine',0.22),i*90)); },
     over()    { [440,330,262,196].forEach((f,i)=>setTimeout(()=>this.tone(f,0.22,'triangle',0.22),i*140)); },
+    heartbeat() { this.tone(55, 0.15, 'sine', 0.3, 40); setTimeout(()=>this.tone(55, 0.12, 'sine', 0.2, 35), 150); },
     // simple looping bassline/arp as background music
     startMusic() {
       if (!this.ac || this.musicTimer) return;
@@ -556,14 +563,8 @@
   // Biomes: 0 meadow, 1 forest, 2 rocky, 3 desert, 4 ruins. Bigger scale =
   // larger, more coherent regions and fewer biome edges cutting objects apart.
   const BIOME_SCALE = 15;
-  function biomeAt(tx, ty) {
-    const v = vnoise(tx / BIOME_SCALE, ty / BIOME_SCALE);
-    if (v < 0.40) return 0;   // meadow (most common)
-    if (v < 0.60) return 1;   // forest
-    if (v < 0.76) return 2;   // rocky
-    if (v < 0.88) return 3;   // desert
-    return 4;                 // ruins
-  }
+  let currentMap = 1; // 0=meadow 1=forest 2=rocky 3=desert 4=ruins
+  function biomeAt(tx, ty) { return currentMap; }
   // Integrity check: every cell an object visually covers must be the same
   // biome as its anchor, so we never get a pyramid whose top spills onto grass.
   function biomeConsistent(tx, ty, cellsW, cellsH) {
@@ -590,9 +591,10 @@
   const WATER_SCALE = 5;
   function isWaterCell(tx, ty) {
     const bi = biomeAt(tx, ty);
-    if (bi !== 0 && bi !== 1) return false; // meadow/forest only
-    if (Math.abs(tx) <= 3 && Math.abs(ty) <= 3) return false; // keep spawn dry
-    return vnoise(tx / WATER_SCALE + 11.3, ty / WATER_SCALE + 27.9) < 0.20;
+    if (bi === 3) return false; // no water in desert
+    if (Math.abs(tx) <= 3 && Math.abs(ty) <= 3) return false;
+    const thresh = (bi === 0 || bi === 1) ? 0.20 : 0.12;
+    return vnoise(tx / WATER_SCALE + 11.3, ty / WATER_SCALE + 27.9) < thresh;
   }
   // 4x3 water autotile in water.png. Map 4-cardinal grass-adjacency bitmask
   const WATER_UV = {
@@ -636,14 +638,12 @@
   }
 
   // ---- Paths ----------------------------------------------------------
-  const PATH_SCALE = 4.5;
+  const PATH_SCALE = 12;
   function isPathCell(tx, ty) {
     if (isWaterCell(tx, ty)) return false;
-    const bi = biomeAt(tx, ty);
-    if (bi !== 0 && bi !== 1 && bi !== 2) return false;
     if (Math.abs(tx) <= 2 && Math.abs(ty) <= 2) return false;
     const v = vnoise(tx / PATH_SCALE + 41.7, ty / PATH_SCALE + 19.1);
-    return v > 0.48 && v < 0.52;
+    return v > 0.48 && v < 0.53;
   }
   // paths.png: 11 tiles (32px each). Autotile via 4-bit cardinal bitmask
   // where bits = non-path neighbor: N=1 S=2 E=4 W=8
@@ -694,15 +694,15 @@
     const h = th(tx, ty, 2);
     // (red-scatter "blood" removed from ambient — blood now only appears where NPCs die)
     if (bi === 0) return h < 0.06 ? 1 : h < 0.09 ? 0 : -1;
-    if (bi === 1) return h < 0.07 ? 3 : h < 0.11 ? 5 : h < 0.15 ? 0 : h < 0.18 ? 1 : -1;
+    if (bi === 1) return h < 0.02 ? 3 : h < 0.05 ? 0 : h < 0.08 ? 1 : -1;
     if (bi === 2) return h < 0.04 ? 4 : -1;
     if (bi === 3) return h < 0.03 ? 4 : -1;
     return h < 0.05 ? 4 : -1;                                   // ruins: bones
   }
-  // Blood-splat variants in mask1.png (indices 6..20). Never used as ambient decor —
+  // Blood-splat variants in mask1.png (indices 5..116). Never used as ambient decor —
   // only placed by killEnemy(). Bigger/pool tiles are weighted for boss deaths.
-  const BLOOD_M1_MIN = 6, BLOOD_M1_MAX = 20;
-  const BLOOD_BOSS_POOL = [7, 8, 11, 15, 16]; // big pools/dense splats for bosses
+  const BLOOD_M1_MIN = 5, BLOOD_M1_MAX = 116;
+  const BLOOD_BOSS_POOL = [5, 6, 7, 8, 9, 68, 69, 70, 71, 72, 73, 109]; // big pools/dense splats for bosses
   function pickBloodTile(isBoss) {
     if (isBoss) return BLOOD_BOSS_POOL[(Math.random()*BLOOD_BOSS_POOL.length)|0];
     return BLOOD_M1_MIN + ((Math.random()*(BLOOD_M1_MAX - BLOOD_M1_MIN + 1))|0);
@@ -775,7 +775,17 @@
     { sx:1984, w:32, h:32, bw:26, bh:22 }, // 37 cauldron (1x1)
     { sx:2016, w:32, h:32, bw:22, bh:20 }, // 38 pot dark (1x1)
     { sx:2048, w:32, h:32, bw:22, bh:20 }, // 39 pot green (1x1)
-    { sx:2080, w:32, h:32, bw:24, bh:22 }  // 40 green cauldron (1x1)
+    { sx:2080, w:32, h:32, bw:24, bh:22 }, // 40 green cauldron (1x1)
+    { sx:2112, w:32, h:64, bw:14, bh:16 }, // 41 green leafy tree (1x2)
+    { sx:2144, w:32, h:64, bw:0,  bh:0  }, // 42 dead tree light (1x2, walk-through)
+    { sx:2176, w:32, h:64, bw:0,  bh:0  }, // 43 dead tree dark (1x2, walk-through)
+    { sx:2208, w:32, h:64, bw:14, bh:16 }, // 44 round oak tree (1x2)
+    { sx:2240, w:32, h:64, bw:14, bh:16 }, // 45 tall pine (1x2)
+    { sx:2272, w:32, h:32, bw:0,  bh:0  }, // 46 cherry blossom (1x1, walk-through)
+    { sx:2304, w:32, h:32, bw:0,  bh:0  }, // 47 (unused)
+    { sx:2336, w:32, h:64, bw:0,  bh:0  }, // 48 canopy tree (1x2, walk-through)
+    { sx:2368, w:64, h:32, bw:40, bh:20 }, // 49 (unused)
+    { sx:2432, w:32, h:32, bw:0,  bh:0  }  // 50 (unused)
   ];
   // Which object (if any) is anchored at this tile. Placement uses two gates:
   //   1) biome type (from biomeAt)
@@ -820,13 +830,18 @@
         if (h < 0.045) return 34;                                   // barrel side
         if (h < 0.055) return 37;                                   // cauldron
       }
-      if (h < 0.08) return 0;    // fruit tree
-      if (h < 0.14) return 1;    // oval tree
-      if (h < 0.20) return 21;   // conifer
-      if (h < 0.25) return 3;    // pine
-      if (h < 0.30) return 23;   // autumn tree
-      if (h < 0.35) return 4;    // bush
-      if (h < 0.39) return 12;   // small bush
+      if (h < 0.015) return 0;   // fruit tree
+      if (h < 0.030) return 1;   // oval tree
+      if (h < 0.042) return 41;  // green leafy tree
+      if (h < 0.054) return 44;  // round oak tree
+      if (h < 0.064) return 21;  // conifer
+      if (h < 0.082) return 3;   // pine
+      if (h < 0.090) return 23;  // autumn tree
+      if (h < 0.096) return 42;  // dead tree light
+      if (h < 0.102) return 43;  // dead tree dark
+      if (h < 0.110) return 46;  // cherry blossom
+      if (h < 0.125) return 4;   // bush
+      if (h < 0.150) return 12;  // small bush
       return -1;
     }
 
@@ -973,7 +988,11 @@
   let gameTime = 0, kills = 0, spawnTimer = 0, difficulty = 0;
   let lastBossTime = 0;
   let shake = 0, hitStop = 0, manualPause = false;
-  let dmgVignette = 0;
+  let dmgVignette = 0, lvlFlash = 0, footstepTimer = 0;
+  let streakKills = 0, streakActive = false, streakTimer = 0;
+  let dyingEnemies = [];
+  let totalDmgDealt = 0, dpsWindow = [], heartbeatTimer = 0;
+  let weaponKills = {};
   const KILL_MILESTONES = [25, 50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000];
   let milestonePopups = [], nextMilestoneIdx = 0;
   function juice(shakeAmt, stopAmt) {
@@ -1033,7 +1052,12 @@
     };
     enemies = []; gems = []; projectiles = []; particles = []; orbs = []; damageTexts = []; enemyShots = []; decals = [];
     camX = 0; camY = 0; gameTime = 0; kills = 0; spawnTimer = 0; difficulty = 0; lastBossTime = 0;
-    dmgVignette = 0; milestonePopups = []; nextMilestoneIdx = 0;
+    dmgVignette = 0; lvlFlash = 0; footstepTimer = 0;
+    milestonePopups = []; nextMilestoneIdx = 0;
+    streakKills = 0; streakActive = false; streakTimer = 0;
+    dyingEnemies = [];
+    totalDmgDealt = 0; dpsWindow = []; heartbeatTimer = 0;
+    weaponKills = {};
     shake = 0; hitStop = 0; manualPause = false;
     // Weapon timers keyed by weapon id
     weaponTimers = { knife:0, orbit:0, nova:0, bolt:0, garlic:0, balloon:0, pizza:0 };
@@ -1056,6 +1080,7 @@
     while (xp >= xpNext) {
       xp -= xpNext; level++;
       xpNext = Math.floor(5 + level * 3.2 + level*level*0.35);
+      lvlFlash = 0.35;
       queueLevelUp();
     }
     updateHud();
@@ -1156,14 +1181,24 @@
     { mrow:10, r:12, hp:18, speed:80, dmg:9,  xp:3, score:3, tier:1, biomes:[1,2,3] },      // 10 lizard
     { mrow:11, r:22, hp:110,speed:36, dmg:18, xp:7, score:7, tier:6, biomes:[1] },          // 11 ent
     { mrow:12, r:15, hp:34, speed:58, dmg:13, xp:4, score:4, tier:4, biomes:[2,3] },        // 12 orc
-    { mrow:13, r:13, hp:28, speed:46, dmg:8,  xp:4, score:4, tier:6, biomes:[4], ranged:true, projSpeed:190, projDmg:11, fireCd:2.2, range:380, projColor:'#c07bff' }, // 13 lich
-    { mrow:14, r:13, hp:20, speed:58, dmg:8,  xp:3, score:3, tier:2, biomes:[1,3], ranged:true, projSpeed:270, projDmg:10, fireCd:1.8, range:430, projColor:'#e8d090' }, // 14 archer
-    { mrow:15, r:14, hp:30, speed:46, dmg:9,  xp:5, score:5, tier:8, biomes:[3,4], ranged:true, projSpeed:200, projDmg:12, fireCd:2.2, range:380, projColor:'#ff5a5a' }, // 15 warlock
-    { mrow:16, r:13, hp:22, speed:64, dmg:9,  xp:4, score:4, tier:4, biomes:[3,4], ranged:true, projSpeed:240, projDmg:9,  fireCd:1.9, range:400, projColor:'#cfd6e6' }, // 16 assassin
+    { mrow:13, r:13, hp:28, speed:46, dmg:8,  xp:4, score:4, tier:8, biomes:[4], ranged:true, projSpeed:190, projDmg:11, fireCd:2.2, range:380, projColor:'#c07bff' }, // 13 lich
+    { mrow:14, r:13, hp:20, speed:58, dmg:8,  xp:3, score:3, tier:4, biomes:[1,3], ranged:true, projSpeed:270, projDmg:10, fireCd:1.8, range:430, projColor:'#e8d090' }, // 14 archer
+    { mrow:15, r:14, hp:30, speed:46, dmg:9,  xp:5, score:5, tier:10, biomes:[3,4], ranged:true, projSpeed:200, projDmg:12, fireCd:2.2, range:380, projColor:'#ff5a5a' }, // 15 warlock
+    { mrow:16, r:13, hp:22, speed:64, dmg:9,  xp:4, score:4, tier:6, biomes:[3,4], ranged:true, projSpeed:240, projDmg:9,  fireCd:1.9, range:400, projColor:'#cfd6e6' }, // 16 assassin
     { mrow:17, r:13, hp:22, speed:66, dmg:9,  xp:3, score:3, tier:2, biomes:[2,4], flying:true }, // 17 wraith
     { mrow:18, r:13, hp:20, speed:72, dmg:8,  xp:3, score:3, tier:4, biomes:[4], flying:true },   // 18 ghost
-    { mrow:19, r:11, hp:16, speed:80, dmg:6,  xp:3, score:3, tier:4, biomes:[0,1], flying:true, ranged:true, projSpeed:210, projDmg:8, fireCd:2.0, range:360, projColor:'#f7f04a' }, // 19 wisp
-    { mrow:20, r:14, hp:30, speed:56, dmg:9,  xp:4, score:4, tier:6, biomes:[2,3], flying:true, ranged:true, projSpeed:180, projDmg:10, fireCd:2.0, range:340, projColor:'#ff8a3a' }  // 20 fire elemental
+    { mrow:19, r:11, hp:16, speed:80, dmg:6,  xp:3, score:3, tier:6, biomes:[0,1], flying:true, ranged:true, projSpeed:210, projDmg:8, fireCd:2.0, range:360, projColor:'#f7f04a' }, // 19 wisp
+    { mrow:20, r:14, hp:30, speed:56, dmg:9,  xp:4, score:4, tier:8, biomes:[2,3], flying:true, ranged:true, projSpeed:180, projDmg:10, fireCd:2.0, range:340, projColor:'#ff8a3a' }, // 20 fire elemental
+    { mrow:22, r:12, hp:18, speed:90, dmg:9,  xp:2, score:2, tier:0, biomes:[3] },              // 22 scorpion
+    { mrow:23, r:11, hp:14, speed:72, dmg:7,  xp:2, score:2, tier:0, biomes:[0,1,3] },          // 23 serpent
+    { mrow:24, r:18, hp:65, speed:48, dmg:14, xp:5, score:5, tier:6, biomes:[1,2] },             // 24 ogre
+    { mrow:25, r:13, hp:32, speed:44, dmg:9,  xp:5, score:5, tier:8, biomes:[4], ranged:true, projSpeed:170, projDmg:13, fireCd:2.4, range:400, projColor:'#a040e0' }, // 25 dark mage
+    { mrow:26, r:15, hp:50, speed:50, dmg:14, xp:5, score:5, tier:8, biomes:[2,4] },             // 26 death knight
+    { mrow:27, r:16, hp:36, speed:42, dmg:10, xp:3, score:3, tier:2, biomes:[0,1] },             // 27 slime
+    { mrow:28, r:18, hp:70, speed:46, dmg:15, xp:6, score:6, tier:8, biomes:[1] },               // 28 swamp beast
+    { mrow:29, r:13, hp:26, speed:52, dmg:8,  xp:4, score:4, tier:6, biomes:[1,4], ranged:true, projSpeed:200, projDmg:11, fireCd:2.0, range:390, projColor:'#c060f0' }, // 29 witch
+    { mrow:30, r:14, hp:40, speed:56, dmg:12, xp:4, score:4, tier:4, biomes:[2,4] },             // 30 skeleton warrior
+    { mrow:31, r:18, hp:55, speed:54, dmg:13, xp:5, score:5, tier:6, biomes:[1,4] }              // 31 giant spider
   ];
   const BOSS_MROW = 21; // reaper (flying)
 
@@ -1187,8 +1222,7 @@
       Audio2.boss(); juice(9, 0);
       return;
     }
-    const bi = biomeAt(Math.floor(x / GROUND_T), Math.floor(y / GROUND_T));
-    const t = pickEnemyType(bi);
+    const t = pickEnemyType(currentMap);
     const hpScale = 1 + difficulty * 0.14;
     enemies.push({ x, y, r:t.r, hp:t.hp*hpScale, maxHp:t.hp*hpScale, speed:t.speed*(1+difficulty*0.01),
       dmg:t.dmg, xp:t.xp, mrow:t.mrow, hit:0, score:t.score, faceDir:'down', animTime:0,
@@ -1201,19 +1235,29 @@
   // canCrit: discrete hits can crit; continuous auras (dps) don't, to avoid spam.
   function damageEnemy(e, dmg, kx, ky, canCrit) {
     let crit = false;
+    if (streakActive) dmg *= 2;
     if (canCrit && player.critChance > 0 && Math.random() < player.critChance) { dmg *= 2; crit = true; juice(4, 0); }
     e.hp -= dmg; e.hit = 0.08;
+    totalDmgDealt += dmg;
+    dpsWindow.push({ t: gameTime, v: dmg });
     if (kx || ky) { e.x += kx; e.y += ky; }
-    damageTexts.push({ x:e.x, y:e.y - e.r, t:0.5, v:dmg, crit });
+    damageTexts.push({ x:e.x, y:e.y - e.r, t:0.5, v:dmg, crit, streak: streakActive });
     Audio2.hit();
     if (e.hp <= 0) killEnemy(e);
   }
   function killEnemy(e) {
     e.dead = true; kills++;
+    dyingEnemies.push({ x:e.x, y:e.y, mrow:e.mrow, faceDir:e.faceDir, r:e.r, t:0.3, flying:e.flying, bob:e.bob||0 });
     if (nextMilestoneIdx < KILL_MILESTONES.length && kills >= KILL_MILESTONES[nextMilestoneIdx]) {
       milestonePopups.push({ text: kills + ' KILLS!', t: 2.5, y: 0 });
       juice(14, 0.06);
       nextMilestoneIdx++;
+    }
+    streakKills++;
+    if (streakKills >= 250) {
+      streakKills = 0; streakActive = true; streakTimer = 15;
+      milestonePopups.push({ text: 'RAMPAGE!', t: 2.5, y: 0 });
+      juice(16, 0.08);
     }
     Audio2.kill();
     // blood splat left on the ground (stacks with nearby splats to accumulate)
@@ -1241,7 +1285,7 @@
 
   // ---- Weapons firing -------------------------------------------------
   function updateWeapons(dt) {
-    const cd = player.cdMul;
+    const cd = streakActive ? player.cdMul * 0.375 : player.cdMul;
 
     // Throwing Dagger (auto-aims at the nearest approaching monster)
     if (up.knife.lvl > 0) {
@@ -1310,12 +1354,17 @@
       }
     }
 
-    // Pizza boomerang (out and back)
+    // Pizza boomerang (out and back) — autoaims nearest enemy
     if (up.pizza.lvl > 0) {
       weaponTimers.pizza -= dt;
       if (weaponTimers.pizza <= 0) {
         weaponTimers.pizza = 1.6 * cd;
-        const a = Math.atan2(player.dirY, player.dirX);
+        let a = Math.atan2(player.dirY, player.dirX);
+        let bestD = 500*500;
+        for (const e of enemies) {
+          const d = dist2(player.x, player.y, e.x, e.y);
+          if (d < bestD) { bestD = d; a = Math.atan2(e.y - player.y, e.x - player.x); }
+        }
         projectiles.push({ x:player.x, y:player.y, vx:Math.cos(a)*380, vy:Math.sin(a)*380,
           r:12, dmg:(9+up.pizza.lvl*5)*player.dmg, life:1.6, pierce:1e9, hitSet:new Set(),
           kind:'pizza', age:0, apex:0.55, returning:false, spin:0 });
@@ -1475,6 +1524,13 @@
             damageEnemy(e, (8+up.orbit.lvl*3)*player.dmg*dt*3, 0,0);
           }
         }
+        for (const s of enemyShots) {
+          if (s.life > 0 && dist2(ox,oy,s.x,s.y) < (12+s.r)*(12+s.r)) {
+            s.life = 0;
+            particles.push({ x:s.x, y:s.y, vx:0, vy:0, t:0.25, c:'#8af0ff', r:6, ring:true, maxR:20 });
+            Audio2.tone(600, 0.06, 'sine', 0.1, 900);
+          }
+        }
       }
     }
 
@@ -1573,6 +1629,24 @@
     for (const d of damageTexts) { d.t -= dt; d.y -= 30*dt; }
     damageTexts = damageTexts.filter(d => d.t > 0);
     if (dmgVignette > 0) dmgVignette -= dt;
+    if (lvlFlash > 0) lvlFlash -= dt;
+    dpsWindow = dpsWindow.filter(d => gameTime - d.t < 5);
+    if (player.hp / player.maxHp < 0.25 && player.hp > 0) {
+      heartbeatTimer -= dt;
+      if (heartbeatTimer <= 0) { heartbeatTimer = 0.7; Audio2.heartbeat(); }
+    } else { heartbeatTimer = 0; }
+    if (streakActive) { streakTimer -= dt; if (streakTimer <= 0) { streakActive = false; streakTimer = 0; } }
+    for (const de of dyingEnemies) de.t -= dt;
+    dyingEnemies = dyingEnemies.filter(de => de.t > 0);
+    if (player.moving) {
+      footstepTimer -= dt;
+      if (footstepTimer <= 0) {
+        footstepTimer = 0.12;
+        const px = player.x + (Math.random()-0.5)*10;
+        const py = player.y + player.r * 0.8;
+        particles.push({ x:px, y:py, vx:(Math.random()-0.5)*20, vy:-Math.random()*15, t:0.35, c:'rgba(180,160,130,0.5)', r:1.5+Math.random()*1.5 });
+      }
+    }
     for (const m of milestonePopups) m.t -= dt;
     milestonePopups = milestonePopups.filter(m => m.t > 0);
 
@@ -1595,17 +1669,14 @@
         const dx = tx*T - camX, dy = ty*T - camY;
         const bi = biomeAt(tx, ty);
         ctx.drawImage(IMG.ground, groundIdx(bi,tx,ty)*32, 0, 32, 32, dx, dy, T, T);
-        // Grass edge overlay on non-grass tiles bordering grass
-        if (bi >= 2) {
-          const gN = biomeAt(tx,ty-1) < 2, gS = biomeAt(tx,ty+1) < 2;
-          const gE = biomeAt(tx+1,ty) < 2, gW = biomeAt(tx-1,ty) < 2;
-          if (gN||gS||gE||gW) ctx.drawImage(IMG.ground, 28*32, 0, 32, 32, dx, dy, T, T);
-        }
         // Water autotile — overlays with grass-blended shore edges
         if (IMG.water && isWaterCell(tx, ty)) {
           const tiles = waterTile(tx, ty);
           for (let wt = 0; wt < tiles.length; wt++)
             ctx.drawImage(IMG.water, tiles[wt][0], tiles[wt][1], 32, 32, dx, dy, T, T);
+          const shimmer = 0.04 + 0.03 * Math.sin(gameTime * 2.5 + tx * 1.7 + ty * 2.3);
+          ctx.fillStyle = `rgba(180,220,255,${shimmer})`;
+          ctx.fillRect(dx, dy, T, T);
         } else {
           if (IMG.paths && isPathCell(tx, ty)) {
             const pt = pathTile(tx, ty);
@@ -1649,11 +1720,67 @@
     }
   }
 
+  function drawDyingEnemy(de) {
+    if (!IMG.monsters) return;
+    const sx = de.x - camX, sy = de.y - camY;
+    const size = de.r * 3.0;
+    const progress = 1 - de.t / 0.3;
+    const scale = 1 - progress * 0.5;
+    const alpha = 1 - progress;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(sx, sy);
+    ctx.scale(scale, scale);
+    ctx.imageSmoothingEnabled = false;
+    const col = DIRCOL[de.faceDir];
+    ctx.drawImage(IMG.monsters, col*32, de.mrow*32, 32, 32, -size/2, -size*0.62, size, size);
+    ctx.restore();
+  }
+
   // Draw the hero (shadow + sprite + hp ring).
   function drawHero() {
     const px = player.x - camX, py = player.y - camY, psize = 64;
     const bobY = Math.abs(Math.sin(player.bob)) * -3;
     ctx.imageSmoothingEnabled = true;
+    if (streakActive) {
+      ctx.save();
+      const pulse = 0.5 + 0.5 * Math.sin(gameTime * 4);
+      const glow = ctx.createRadialGradient(px, py - 6, 4, px, py - 6, 70);
+      glow.addColorStop(0, `rgba(255,100,20,${0.4 + pulse * 0.15})`);
+      glow.addColorStop(0.35, `rgba(255,50,10,${0.2 + pulse * 0.1})`);
+      glow.addColorStop(0.7, `rgba(200,30,0,${0.08})`);
+      glow.addColorStop(1, 'rgba(160,0,0,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(px, py - 6, 70, 0, TAU); ctx.fill();
+      for (let i = 0; i < 12; i++) {
+        const seed = i * 137.5;
+        const angle = seed + gameTime * (2 + (i % 3));
+        const rad = 14 + (i % 4) * 6;
+        const fx = px + Math.cos(angle) * rad;
+        const flicker = Math.sin(gameTime * 12 + seed) * 0.5 + 0.5;
+        const rise = (gameTime * 80 + seed * 3) % 50;
+        const fy = py - rise + 10;
+        const fh = 8 + flicker * 10;
+        const fw = 3 + flicker * 3;
+        const fa = (1 - rise / 50) * (0.5 + flicker * 0.4);
+        ctx.globalAlpha = clamp(fa, 0, 0.9);
+        const fg = ctx.createLinearGradient(fx, fy, fx, fy - fh);
+        fg.addColorStop(0, '#ff2800');
+        fg.addColorStop(0.4, '#ff6a00');
+        fg.addColorStop(0.75, '#ffcc00');
+        fg.addColorStop(1, 'rgba(255,255,200,0)');
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.ellipse(fx, fy, fw, fh, 0, 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 0.15 + pulse * 0.1;
+      ctx.strokeStyle = '#ff4400'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(px, py - 6, 48 + pulse * 8, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = '#ff8800'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(px, py - 6, 54 + pulse * 10, 0, TAU); ctx.stroke();
+      ctx.restore();
+    }
     ctx.fillStyle = 'rgba(0,0,0,0.28)';
     ctx.beginPath(); ctx.ellipse(px, py+player.r*1.05, player.r*0.9, player.r*0.35, 0, 0, TAU); ctx.fill();
     if (IMG.hero) {
@@ -1698,6 +1825,17 @@
         ctx.drawImage(IMG.mask1, (b.m||BLOOD_M1_MIN)*32, 0, 32, 32, -b.s/2, -b.s/2, b.s, b.s);
         ctx.restore();
       }
+    }
+
+    // Magnet pickup radius
+    if (player.magnet > 50) {
+      const mx = player.x - camX, my = player.y - camY;
+      const ma = 0.06 + 0.02 * Math.sin(gameTime * 2);
+      ctx.strokeStyle = `rgba(240,192,64,${ma})`;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 8]);
+      ctx.beginPath(); ctx.arc(mx, my, player.magnet, 0, TAU); ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     for (const g of gems) {
@@ -1754,11 +1892,13 @@
       const sx = e.x - camX; if (sx < -100 || sx > W+100) continue;
       dl.push({ y: e.y + e.r, t:1, e });
     }
+    for (const de of dyingEnemies) dl.push({ y: de.y + de.r, t:3, de });
     dl.push({ y: player.y + player.r, t:2 });
     dl.sort((a,b) => a.y - b.y);
     for (const it of dl) {
       if (it.t === 0) drawObj(it.tx, it.ty, it.oi);
       else if (it.t === 1) drawEnemy(it.e);
+      else if (it.t === 3) drawDyingEnemy(it.de);
       else drawHero();
     }
     ctx.imageSmoothingEnabled = smE;
@@ -1830,8 +1970,12 @@
     for (const d of damageTexts) {
       ctx.globalAlpha = clamp(d.t*2,0,1);
       if (d.crit) { ctx.fillStyle = '#ff5a5a'; ctx.font = 'bold 18px sans-serif'; }
+      else if (d.streak) { ctx.fillStyle = '#ff8830'; ctx.font = 'bold 15px sans-serif'; }
       else { ctx.fillStyle = '#ffd86b'; ctx.font = 'bold 13px sans-serif'; }
-      ctx.fillText(Math.round(d.v) + (d.crit?'!':''), d.x-camX, d.y-camY);
+      const txt = Math.round(d.v) + (d.crit ? '!' : '');
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+      ctx.strokeText(txt, d.x-camX, d.y-camY);
+      ctx.fillText(txt, d.x-camX, d.y-camY);
     }
     ctx.globalAlpha = 1;
     ctx.restore(); // end screen-shake transform
@@ -1842,6 +1986,25 @@
       vg.addColorStop(0, 'rgba(180,0,0,0)');
       vg.addColorStop(1, `rgba(180,0,0,${va})`);
       ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    }
+
+    if (player.hp / player.maxHp < 0.25 && player.hp > 0) {
+      const hbPhase = heartbeatTimer / 0.7;
+      const hbPulse = hbPhase > 0.7 ? (1 - hbPhase) / 0.3 : hbPhase < 0.3 ? hbPhase / 0.3 * 0.5 : 0.5;
+      const ha = 0.15 + hbPulse * 0.25;
+      const hg = ctx.createRadialGradient(W/2, H/2, W*0.22, W/2, H/2, W*0.7);
+      hg.addColorStop(0, 'rgba(120,0,0,0)');
+      hg.addColorStop(1, `rgba(120,0,0,${ha})`);
+      ctx.fillStyle = hg; ctx.fillRect(0, 0, W, H);
+    }
+
+    if (lvlFlash > 0) {
+      const fa = clamp(lvlFlash / 0.35, 0, 1);
+      const fg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W*0.6);
+      fg.addColorStop(0, `rgba(255,240,180,${fa * 0.45})`);
+      fg.addColorStop(0.5, `rgba(240,200,60,${fa * 0.2})`);
+      fg.addColorStop(1, `rgba(200,160,40,0)`);
+      ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
     }
 
     if (milestonePopups.length) {
@@ -1864,6 +2027,49 @@
       }
       ctx.globalAlpha = 1;
     }
+
+    // Boss Timer circle gauge (right side, below top buttons)
+    if (state === 'playing') {
+      const bossPct = clamp((gameTime - lastBossTime) / 60, 0, 1);
+      const cx = W - 58, cy = 110, rad = 48, lw = 9;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, TAU);
+      ctx.fillStyle = 'rgba(10,13,22,0.75)'; ctx.fill();
+      ctx.lineWidth = lw; ctx.strokeStyle = '#1a1020'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, rad, -Math.PI/2, -Math.PI/2 + TAU * bossPct);
+      ctx.strokeStyle = bossPct > 0.85 ? '#ff4060' : '#e03060'; ctx.lineWidth = lw; ctx.stroke();
+      if (bossPct > 0.85) {
+        ctx.beginPath(); ctx.arc(cx, cy, rad + 5, 0, TAU);
+        ctx.strokeStyle = `rgba(255,64,96,${0.35 + 0.25 * Math.sin(gameTime * 8)})`;
+        ctx.lineWidth = 3; ctx.stroke();
+      }
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold 16px sans-serif'; ctx.fillStyle = '#e06080';
+      ctx.fillText('BOSS', cx, cy - 8);
+      ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = '#c08090';
+      ctx.fillText('TIMER', cx, cy + 9);
+      if (bossPct > 0.85) {
+        ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = '#ff4060';
+        ctx.fillText('INCOMING!', cx, cy + 28);
+      }
+      ctx.restore();
+    }
+
+    // DPS counter (bottom-left)
+    if (state === 'playing') {
+      let dps = 0;
+      for (const d of dpsWindow) dps += d.v;
+      dps = dpsWindow.length ? dps / Math.min(5, gameTime || 1) : 0;
+      ctx.save();
+      ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+      const dpsText = '⚔ ' + Math.round(dps) + ' DPS';
+      ctx.strokeText(dpsText, 14, H - 14);
+      ctx.fillStyle = dps > 100 ? '#ff6a40' : dps > 40 ? '#f0c040' : '#a0b0c0';
+      ctx.fillText(dpsText, 14, H - 14);
+      ctx.restore();
+    }
   }
 
   // ---- HUD ------------------------------------------------------------
@@ -1876,11 +2082,17 @@
     const m = Math.floor(gameTime/60), s = Math.floor(gameTime%60);
     document.getElementById('timer').textContent =
       String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-    const bossPct = clamp((gameTime - lastBossTime) / 60, 0, 1);
-    document.getElementById('bossbar').style.width = (bossPct * 100) + '%';
-    const bossLabel = document.getElementById('bossLabel');
-    if (bossPct > 0.85) { bossLabel.textContent = 'BOSS INCOMING!'; bossLabel.style.color = '#ff4060'; }
-    else { bossLabel.textContent = 'BOSS'; bossLabel.style.color = '#e06080'; }
+    const streakPct = streakActive ? 1 : streakKills / 250;
+    document.getElementById('streakbar').style.width = (streakPct * 100) + '%';
+    const sw = document.getElementById('streakWrap');
+    const sl = document.getElementById('streakLabel');
+    if (streakActive) {
+      sw.classList.add('active');
+      sl.textContent = 'RAMPAGE ' + Math.ceil(streakTimer) + 's';
+    } else {
+      sw.classList.remove('active');
+      sl.textContent = 'Rampage: ' + streakKills + '/250 kills';
+    }
   }
 
   // ---- High score -----------------------------------------------------
@@ -1900,9 +2112,17 @@
     const isBest = score > hiScore;
     if (isBest) { hiScore = score; CG.setItem(HI_KEY, String(hiScore)); refreshHiScore(); }
     const m = Math.floor(gameTime/60), s = Math.floor(gameTime%60);
+    const avgDps = gameTime > 0 ? Math.round(totalDmgDealt / gameTime) : 0;
+    const dmgStr = totalDmgDealt >= 1000 ? (totalDmgDealt/1000).toFixed(1) + 'k' : Math.round(totalDmgDealt);
+    let weaponList = '';
+    for (const k of Object.keys(up)) {
+      const u = up[k]; if (u.kind === 'weapon' && u.lvl > 0) weaponList += `${u.ic}Lv${u.lvl} `;
+    }
     document.getElementById('finalStats').innerHTML =
       `Survived <b>${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</b><br>
        Level <b>${level}</b> &nbsp;·&nbsp; Enemies <b>${kills}</b><br>
+       Total Damage <b>${dmgStr}</b> &nbsp;·&nbsp; Avg DPS <b>${avgDps}</b><br>
+       ${weaponList ? 'Weapons: ' + weaponList + '<br>' : ''}
        Score <b>${score}</b>${isBest ? ' &nbsp;🏆 NEW BEST!' : ''}<br>
        <span style="color:#8a93a8;font-size:14px">Best: ${hiScore}</span>`;
     // Offer a one-time rewarded-ad revive (only when the SDK can serve ads).
