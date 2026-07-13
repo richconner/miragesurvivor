@@ -108,6 +108,14 @@
   .rightgrp { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; }
   #score { color: #f0c040; font-size: 18px; }
   #kills { color: #f08a40; font-size: 13px; }
+  #inventory { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+  .inv-slot { width: 36px; height: 36px; background: rgba(10,13,22,0.75); border: 1.5px solid #2a3350;
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; position: relative; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+  .inv-slot.weapon { border-color: #c9302c; }
+  .inv-slot.passive { border-color: #3d7bff; }
+  .inv-slot .inv-lv { position: absolute; bottom: -1px; right: 1px; font-size: 9px; font-weight: 900;
+    color: #f0c040; text-shadow: 0 1px 2px #000, 0 0 4px #000; line-height: 1; }
 
   /* Mobile joystick */
   #stick { position: fixed; z-index: 6; width: 120px; height: 120px; border-radius: 50%;
@@ -129,6 +137,7 @@
     <span id="timer">00:00</span>
     <span class="rightgrp"><span id="score">★ 0</span><span id="kills">💢 0</span></span>
   </div>
+  <div id="inventory"></div>
 </div>
 
 <div class="topbtns hidden" id="topbtns">
@@ -957,8 +966,10 @@
   let camX = 0, camY = 0;
   let gameTime = 0, kills = 0, spawnTimer = 0, difficulty = 0;
   let lastBossTime = 0;
-  // "Juice": screen shake + hit-stop (brief freeze on big hits)
   let shake = 0, hitStop = 0, manualPause = false;
+  let dmgVignette = 0;
+  const KILL_MILESTONES = [25, 50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000];
+  let milestonePopups = [], nextMilestoneIdx = 0;
   function juice(shakeAmt, stopAmt) {
     if (shakeAmt > shake) shake = shakeAmt;
     if (stopAmt && stopAmt > hitStop) hitStop = stopAmt;
@@ -1016,11 +1027,13 @@
     };
     enemies = []; gems = []; projectiles = []; particles = []; orbs = []; damageTexts = []; enemyShots = []; decals = [];
     camX = 0; camY = 0; gameTime = 0; kills = 0; spawnTimer = 0; difficulty = 0; lastBossTime = 0;
+    dmgVignette = 0; milestonePopups = []; nextMilestoneIdx = 0;
     shake = 0; hitStop = 0; manualPause = false;
     // Weapon timers keyed by weapon id
     weaponTimers = { knife:0, orbit:0, nova:0, bolt:0, garlic:0, balloon:0, pizza:0 };
     // start with spitballs
     up.knife.lvl = 1;
+    refreshInventory();
     state = 'playing';
     show('hud'); hide('menu'); hide('gameover'); hide('levelup'); hide('menuScene');
     menuScene.active = false;
@@ -1086,10 +1099,24 @@
       u.lvl++;
       if (u.kind === 'passive') recalcPassives();
     }
+    refreshInventory();
     levelQueue--;
     hide('levelup');
     if (levelQueue > 0) { openLevelUp(); }
     else { state = 'playing'; CG.gameplayStart(); }
+  }
+
+  function refreshInventory() {
+    const el = document.getElementById('inventory');
+    if (!el || !up) return;
+    let html = '';
+    for (const k of Object.keys(up)) {
+      const u = up[k];
+      if (u.lvl <= 0) continue;
+      const cls = u.kind === 'weapon' ? 'weapon' : 'passive';
+      html += `<div class="inv-slot ${cls}" title="${u.name} Lv${u.lvl}">${u.ic}<span class="inv-lv">${u.lvl}</span></div>`;
+    }
+    el.innerHTML = html;
   }
 
   function recalcPassives() {
@@ -1177,6 +1204,11 @@
   }
   function killEnemy(e) {
     e.dead = true; kills++;
+    if (nextMilestoneIdx < KILL_MILESTONES.length && kills >= KILL_MILESTONES[nextMilestoneIdx]) {
+      milestonePopups.push({ text: kills + ' KILLS!', t: 2.5, y: 0 });
+      juice(14, 0.06);
+      nextMilestoneIdx++;
+    }
     Audio2.kill();
     // blood splat left on the ground (stacks with nearby splats to accumulate)
     addBloodDecal(e.x, e.y + e.r*0.4, e.boss);
@@ -1376,6 +1408,7 @@
         if (player.iframe <= 0) {
           player.hp -= e.dmg;
           player.iframe = 0.6; player.flash = 0.15;
+          dmgVignette = 0.45;
           Audio2.hurt(); juice(11, 0.07);
           if (player.hp <= 0) { gameOver(); return; }
         }
@@ -1402,6 +1435,7 @@
         s.life = 0;
         if (player.iframe <= 0) {
           player.hp -= s.dmg; player.iframe = 0.6; player.flash = 0.15;
+          dmgVignette = 0.45;
           Audio2.hurt(); juice(9, 0.05);
           if (player.hp <= 0) { gameOver(); return; }
         }
@@ -1488,10 +1522,17 @@
       const d2v = dist2(g.x,g.y,player.x,player.y);
       if (d2v < mr*mr) {
         const a = Math.atan2(player.y-g.y, player.x-g.x);
-        const pull = clamp(400 - Math.sqrt(d2v), 120, 400);
-        g.x += Math.cos(a)*pull*dt*2; g.y += Math.sin(a)*pull*dt*2;
+        const dd = Math.sqrt(d2v);
+        const pull = clamp(400 - dd, 120, 400);
+        const curve = dd > 30 ? 0.35 : 0;
+        if (!g.curveDir) g.curveDir = (hash2(g.x*17|0, g.y*31|0) < 0.5) ? 1 : -1;
+        const px = Math.cos(a) + Math.cos(a + Math.PI/2) * curve * g.curveDir;
+        const py = Math.sin(a) + Math.sin(a + Math.PI/2) * curve * g.curveDir;
+        g.x += px*pull*dt*2; g.y += py*pull*dt*2;
+        g.vacuuming = true;
       } else {
         g.x += (g.vx||0)*dt; g.y += (g.vy||0)*dt; g.vx*=0.9; g.vy*=0.9;
+        g.vacuuming = false;
       }
       if (d2v < (player.r+g.r)*(player.r+g.r)) { g.got = true; gainXp(g.v * player.cashMul); Audio2.pickup(); }
     }
@@ -1525,6 +1566,9 @@
     particles = particles.filter(p => p.t > 0);
     for (const d of damageTexts) { d.t -= dt; d.y -= 30*dt; }
     damageTexts = damageTexts.filter(d => d.t > 0);
+    if (dmgVignette > 0) dmgVignette -= dt;
+    for (const m of milestonePopups) m.t -= dt;
+    milestonePopups = milestonePopups.filter(m => m.t > 0);
 
     updateHud();
   }
@@ -1617,8 +1661,15 @@
     } else {
       ctx.drawImage(Sprites.boy, px-24, py+bobY-24, 48, 48);
     }
-    ctx.strokeStyle = '#3ad06a'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(px,py,player.r+9, -Math.PI/2, -Math.PI/2 + TAU*(player.hp/player.maxHp)); ctx.stroke();
+    // HP bar below player
+    ctx.imageSmoothingEnabled = true;
+    const hpW = 38, hpH = 5, hpX = px - hpW/2, hpY = py + player.r + 6;
+    const hpPct = player.hp / player.maxHp;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.beginPath(); ctx.roundRect(hpX - 1, hpY - 1, hpW + 2, hpH + 2, 3); ctx.fill();
+    const hpColor = hpPct > 0.5 ? '#3ad06a' : hpPct > 0.25 ? '#e0a020' : '#d03030';
+    ctx.fillStyle = hpColor;
+    ctx.beginPath(); ctx.roundRect(hpX, hpY, hpW * hpPct, hpH, 2); ctx.fill();
   }
 
   function render() {
@@ -1643,10 +1694,18 @@
       }
     }
 
-    // gold pickups (dropped by monsters)
     for (const g of gems) {
       const sx = g.x - camX, sy = g.y - camY;
       const fb = Math.sin((gameTime*4) + g.x*0.1) * 2;
+      if (g.vacuuming) {
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = '#f0c040';
+        for (let i = 0; i < 3; i++) {
+          const ox = (Math.random()-0.5)*8, oy = (Math.random()-0.5)*8;
+          ctx.beginPath(); ctx.arc(sx+ox, sy+oy+fb, 1.5+Math.random()*1.5, 0, TAU); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
       ctx.drawImage(Sprites.cash, sx-10, sy-10+fb, 20, 20);
     }
 
@@ -1770,6 +1829,35 @@
     }
     ctx.globalAlpha = 1;
     ctx.restore(); // end screen-shake transform
+
+    if (dmgVignette > 0) {
+      const va = clamp(dmgVignette * 2.2, 0, 0.55);
+      const vg = ctx.createRadialGradient(W/2, H/2, W*0.28, W/2, H/2, W*0.75);
+      vg.addColorStop(0, 'rgba(180,0,0,0)');
+      vg.addColorStop(1, `rgba(180,0,0,${va})`);
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    }
+
+    if (milestonePopups.length) {
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (const m of milestonePopups) {
+        const age = 2.5 - m.t;
+        const slideY = H * 0.32 - Math.min(age * 120, 30);
+        const alpha = m.t < 0.5 ? m.t * 2 : (age < 0.3 ? age / 0.3 : 1);
+        const sc = age < 0.15 ? 0.6 + age / 0.15 * 0.4 : 1;
+        ctx.save();
+        ctx.translate(W/2, slideY);
+        ctx.scale(sc, sc);
+        ctx.globalAlpha = clamp(alpha, 0, 1);
+        ctx.font = 'bold 28px sans-serif';
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 5;
+        ctx.strokeText(m.text, 0, 0);
+        ctx.fillStyle = '#f0c040';
+        ctx.fillText(m.text, 0, 0);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
   // ---- HUD ------------------------------------------------------------
