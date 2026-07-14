@@ -228,8 +228,8 @@
     <h1>MIRAGE SURVIVORS</h1>
     <div class="divider"></div>
     <div class="subtitle">The realm of Mirage is overrun. Stand your ground, hero.</div>
-    <button class="btn" id="playBtn">ENTER</button>
-    <button class="btn secondary" id="shopBtn">UPGRADES</button>
+    <button class="btn" id="playBtn">SELECT HERO</button>
+    <button class="btn secondary" id="shopBtn">BUY UPGRADES</button>
     <div class="hiscore" id="menuHi"></div>
     <div class="shop-gold" id="menuGold" style="margin-top:4px;font-size:15px;"></div>
     <div class="help">
@@ -889,11 +889,11 @@
         if (h < 0.12) return 5;                                     // well
         if (h < 0.16) return 12;                                    // small bush
       }
-      if (h < 0.020) return 0;   // fruit tree
-      if (h < 0.032) return 1;   // oval tree
-      if (h < 0.040) return 23;  // autumn tree
-      if (h < 0.052) return 4;   // bush
-      if (h < 0.065) return 12;  // small bush
+      if (h < 0.014) return 0;   // fruit tree
+      if (h < 0.022) return 1;   // oval tree
+      if (h < 0.028) return 23;  // autumn tree
+      if (h < 0.040) return 4;   // bush
+      if (h < 0.052) return 12;  // small bush
       return -1;
     }
 
@@ -1503,22 +1503,22 @@
     { mrow:10, r:12, hp:18, speed:80, dmg:9,  xp:3, score:3, tier:1, biomes:[1,2,3] },      // 10 lizard
     { mrow:11, r:22, hp:110,speed:36, dmg:18, xp:7, score:7, tier:6, biomes:[1] },          // 11 ent
     { mrow:12, r:15, hp:34, speed:58, dmg:13, xp:4, score:4, tier:4, biomes:[2,3] },        // 12 orc
-    { mrow:13, r:13, hp:28, speed:46, dmg:8,  xp:4, score:4, tier:8, biomes:[4], ranged:true, projSpeed:190, projDmg:11, fireCd:2.2, range:380, projColor:'#c07bff' }, // 13 lich
-    { mrow:14, r:13, hp:20, speed:58, dmg:8,  xp:3, score:3, tier:4, biomes:[1,3], ranged:true, projSpeed:270, projDmg:10, fireCd:1.8, range:430, projColor:'#e8d090' }, // 14 archer
-    { mrow:15, r:14, hp:30, speed:46, dmg:9,  xp:5, score:5, tier:10, biomes:[3,4], ranged:true, projSpeed:200, projDmg:12, fireCd:2.2, range:380, projColor:'#ff5a5a' }, // 15 warlock
-    { mrow:16, r:13, hp:22, speed:64, dmg:9,  xp:4, score:4, tier:6, biomes:[3,4], ranged:true, projSpeed:240, projDmg:9,  fireCd:1.9, range:400, projColor:'#cfd6e6' }, // 16 assassin
+    { mrow:13, r:13, hp:28, speed:46, dmg:8,  xp:4, score:4, tier:8, biomes:[4], ranged:true, projSpeed:190, projDmg:11, fireCd:2.8, range:380, projColor:'#c07bff' }, // 13 lich
+    { mrow:14, r:13, hp:20, speed:58, dmg:8,  xp:3, score:3, tier:4, biomes:[1,3], ranged:true, projSpeed:270, projDmg:10, fireCd:2.4, range:430, projColor:'#e8d090' }, // 14 archer
+    { mrow:15, r:14, hp:30, speed:46, dmg:9,  xp:5, score:5, tier:10, biomes:[3,4], ranged:true, projSpeed:200, projDmg:12, fireCd:2.8, range:380, projColor:'#ff5a5a' }, // 15 warlock
+    { mrow:16, r:13, hp:22, speed:64, dmg:9,  xp:4, score:4, tier:6, biomes:[3,4], ranged:true, projSpeed:240, projDmg:9,  fireCd:2.5, range:400, projColor:'#cfd6e6' }, // 16 assassin
     { mrow:17, r:13, hp:22, speed:66, dmg:9,  xp:3, score:3, tier:2, biomes:[2,4], flying:true }, // 17 wraith
     { mrow:18, r:13, hp:20, speed:72, dmg:8,  xp:3, score:3, tier:4, biomes:[4], flying:true },   // 18 ghost
-    { mrow:19, r:11, hp:16, speed:80, dmg:6,  xp:3, score:3, tier:6, biomes:[0,1], flying:true, ranged:true, projSpeed:210, projDmg:8, fireCd:2.0, range:360, projColor:'#f7f04a' }, // 19 wisp
-    { mrow:20, r:14, hp:30, speed:56, dmg:9,  xp:4, score:4, tier:8, biomes:[2,3], flying:true, ranged:true, projSpeed:180, projDmg:10, fireCd:2.0, range:340, projColor:'#ff8a3a' }, // 20 fire elemental
+    { mrow:19, r:11, hp:16, speed:80, dmg:6,  xp:3, score:3, tier:6, biomes:[0,1], flying:true, ranged:true, projSpeed:210, projDmg:8, fireCd:2.6, range:360, projColor:'#f7f04a' }, // 19 wisp
+    { mrow:20, r:14, hp:30, speed:56, dmg:9,  xp:4, score:4, tier:8, biomes:[2,3], flying:true, ranged:true, projSpeed:180, projDmg:10, fireCd:2.6, range:340, projColor:'#ff8a3a' }, // 20 fire elemental
     { mrow:22, r:12, hp:18, speed:90, dmg:9,  xp:2, score:2, tier:0, biomes:[3] },              // 22 scorpion
     { mrow:23, r:11, hp:14, speed:72, dmg:7,  xp:2, score:2, tier:0, biomes:[0,1,3] },          // 23 serpent
     { mrow:24, r:18, hp:65, speed:48, dmg:14, xp:5, score:5, tier:6, biomes:[1,2] },             // 24 ogre
-    { mrow:25, r:13, hp:32, speed:44, dmg:9,  xp:5, score:5, tier:8, biomes:[4], ranged:true, projSpeed:170, projDmg:13, fireCd:2.4, range:400, projColor:'#a040e0' }, // 25 dark mage
+    { mrow:25, r:13, hp:32, speed:44, dmg:9,  xp:5, score:5, tier:8, biomes:[4], ranged:true, projSpeed:170, projDmg:13, fireCd:3.0, range:400, projColor:'#a040e0' }, // 25 dark mage
     { mrow:26, r:15, hp:50, speed:50, dmg:14, xp:5, score:5, tier:8, biomes:[2,4] },             // 26 death knight
     { mrow:27, r:16, hp:36, speed:42, dmg:10, xp:3, score:3, tier:2, biomes:[0,1] },             // 27 slime
     { mrow:28, r:18, hp:70, speed:46, dmg:15, xp:6, score:6, tier:8, biomes:[1] },               // 28 swamp beast
-    { mrow:29, r:13, hp:26, speed:52, dmg:8,  xp:4, score:4, tier:6, biomes:[1,4], ranged:true, projSpeed:200, projDmg:11, fireCd:2.0, range:390, projColor:'#c060f0' }, // 29 witch
+    { mrow:29, r:13, hp:26, speed:52, dmg:8,  xp:4, score:4, tier:6, biomes:[1,4], ranged:true, projSpeed:200, projDmg:11, fireCd:2.6, range:390, projColor:'#c060f0' }, // 29 witch
     { mrow:30, r:14, hp:40, speed:56, dmg:12, xp:4, score:4, tier:4, biomes:[2,4] },             // 30 skeleton warrior
     { mrow:31, r:18, hp:55, speed:54, dmg:13, xp:5, score:5, tier:6, biomes:[1,4] }              // 31 giant spider
   ];
@@ -1899,7 +1899,7 @@
         const spd = 280 * ps;
         const dmg = (7 + up.boomerang.lvl * 3) * player.dmg;
         projectiles.push({ x:player.x, y:player.y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
-          r:10, dmg, pierce:99, life:0.5, kind:'boomerang', returning:false, origX:player.x, origY:player.y, age:0 });
+          r:10, dmg, pierce:99, life:0.5, hitSet:new Set(), kind:'boomerang', returning:false, origX:player.x, origY:player.y, age:0 });
         Audio2.tone(350, 0.08, 'triangle', 0.06, 200);
       }
     }
@@ -1978,7 +1978,7 @@
           if (closest) {
             const ca = Math.atan2(closest.y - c.y, closest.x - c.x);
             projectiles.push({ x:c.x, y:c.y, vx:Math.cos(ca)*250*ps, vy:Math.sin(ca)*250*ps,
-              r:6, dmg:(5+up.clone.lvl*2)*player.dmg*0.5, pierce:1, life:1.5, kind:'clone_bolt' });
+              r:6, dmg:(5+up.clone.lvl*2)*player.dmg*0.5, pierce:1, life:1.5, hitSet:new Set(), kind:'clone_bolt' });
           }
         }
       }
@@ -1994,7 +1994,7 @@
         for (let i = 0; i < dirs; i++) {
           const ca = (TAU * i / dirs);
           projectiles.push({ x:player.x, y:player.y, vx:Math.cos(ca)*220*ps, vy:Math.sin(ca)*220*ps,
-            r:7, dmg:cdmg, pierce:3+up.cross.lvl, life:1.2, kind:'cross' });
+            r:7, dmg:cdmg, pierce:3+up.cross.lvl, life:1.2, hitSet:new Set(), kind:'cross' });
         }
         Audio2.tone(440, 0.08, 'sine', 0.06, 280);
       }
@@ -3244,12 +3244,35 @@
       for (const e of enemies) {
         if (e.chained > 0) {
           const ex = e.x - camX, ey = e.y - camY;
+          const dx = ex - px, dy = ey - py;
+          const len = Math.hypot(dx, dy);
+          const nx = dx/len, ny = dy/len;
+          const al = Math.min(1, e.chained * 2);
+          const pulse = 0.7 + 0.3 * Math.sin(gameTime * 10);
           ctx.save();
-          ctx.strokeStyle = `rgba(100,180,255,${e.chained})`;
-          ctx.lineWidth = 2; ctx.shadowColor = '#60b0ff'; ctx.shadowBlur = 8;
-          ctx.setLineDash([4, 4]);
-          ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(ex, ey); ctx.stroke();
-          ctx.setLineDash([]);
+          ctx.shadowColor = '#80c0ff'; ctx.shadowBlur = 18 * pulse;
+          ctx.strokeStyle = `rgba(140,200,255,${al * 0.15})`;
+          ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(ex, ey); ctx.stroke();
+          ctx.strokeStyle = `rgba(100,180,255,${al * 0.5})`;
+          ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(ex, ey); ctx.stroke();
+          const linkSize = 6, gap = 14;
+          const links = Math.floor(len / gap);
+          for (let i = 1; i < links; i++) {
+            const t = i / links;
+            const lx = px + dx * t + Math.sin(gameTime * 8 + i * 1.5) * 3 * (1 - Math.abs(t - 0.5) * 2);
+            const ly = py + dy * t + Math.cos(gameTime * 8 + i * 1.5) * 3 * (1 - Math.abs(t - 0.5) * 2);
+            const ang = Math.atan2(ny, nx) + (i % 2 ? 0.5 : -0.5);
+            ctx.strokeStyle = `rgba(180,220,255,${al * pulse})`;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.ellipse(lx, ly, linkSize * 0.7, linkSize * 0.4, ang, 0, TAU);
+            ctx.stroke();
+          }
+          ctx.shadowBlur = 12; ctx.shadowColor = '#a0d0ff';
+          ctx.fillStyle = `rgba(160,210,255,${al * pulse})`;
+          ctx.beginPath(); ctx.arc(ex, ey, 8, 0, TAU); ctx.fill();
+          ctx.strokeStyle = `rgba(200,230,255,${al * 0.8})`;
+          ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(ex, ey, 12 + Math.sin(gameTime * 6) * 3, 0, TAU); ctx.stroke();
           ctx.restore();
         }
       }
