@@ -98,6 +98,13 @@
   .card .nm { font-weight: 700; font-size: 17px; margin-bottom: 6px; }
   .card .lv { color: #f0c040; font-size: 12px; margin-bottom: 8px; letter-spacing: 1px; }
   .card .ds { color: #97a0b8; font-size: 13px; line-height: 1.45; }
+  .card { position: relative; }
+  .ban-btn { margin-top: 8px; padding: 4px 10px; background: rgba(180,40,40,0.3); border: 1px solid #803030;
+    border-radius: 6px; font-size: 11px; color: #e06060; cursor: pointer; text-align: center; }
+  .ban-btn:hover { background: rgba(200,50,50,0.5); color: #ff8080; }
+  .skip-btn { width: 200px; padding: 12px 16px; background: #141a2b; border: 2px solid #2a3350; border-radius: 12px;
+    cursor: pointer; text-align: center; color: #7a8498; font-size: 14px; font-weight: 700; transition: transform .08s, border-color .08s; }
+  .skip-btn:hover { transform: translateY(-4px); border-color: #7a8498; color: #a0aab8; }
 
   /* HUD */
   #hud { position: fixed; top: 0; left: 0; right: 0; z-index: 5; pointer-events: none; padding: 10px 14px; }
@@ -1062,6 +1069,8 @@
   let totalDmgDealt = 0, dpsWindow = [], heartbeatTimer = 0;
   let weaponKills = {};
   let poisonClouds = [], iceWalls = [], secondWindUses = 0, shieldBashVfx = [], bossTrails = [];
+  let momentumStacks = 0, adrenalineTimer = 0, clones = [], bannedUpgrades = {}, meteorImpacts = [];
+  let bossLightning = [], bossBeams = [], bossFirePillars = [], bossQuakes = [];
   const KILL_MILESTONES = [25, 50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000];
   let milestonePopups = [], nextMilestoneIdx = 0;
   function juice(shakeAmt, stopAmt) {
@@ -1253,6 +1262,16 @@
                  desc:'Random lightning bolts strike nearby enemies.' },
       icewall: { kind:'weapon', name:'Ice Wall', ic:'🧊', lvl:0, max:6,
                  desc:'Drops a barrier behind you that blocks & slows enemies.' },
+      boomerang:{ kind:'weapon', name:'Boomerang Blade', ic:'🪃', lvl:0, max:6,
+                 desc:'Throws a blade that curves out and returns, hitting twice.' },
+      chains:  { kind:'weapon', name:'Spectral Chains', ic:'⛓️', lvl:0, max:6,
+                 desc:'Tethers to nearby enemies, dealing damage over time.' },
+      meteor:  { kind:'weapon', name:'Meteor Strike', ic:'☄️', lvl:0, max:6,
+                 desc:'Meteors rain down on clusters of enemies.' },
+      clone:   { kind:'weapon', name:'Shadow Clone', ic:'👤', lvl:0, max:5,
+                 desc:'A shadow mimics your movement and attacks for you.' },
+      cross:   { kind:'weapon', name:'Holy Cross', ic:'✝️', lvl:0, max:6,
+                 desc:'Fires projectiles in a + pattern. Levels add diagonals.' },
       // PERKS (passive boosts)
       power:   { kind:'passive', name:'Strength', ic:'⚔️', lvl:0, max:5,
                  desc:'+18% weapon damage.' },
@@ -1289,7 +1308,17 @@
       luck:    { kind:'passive', name:'Luck', ic:'🍀', lvl:0, max:4,
                  desc:'Better drop rates for heal orbs, bombs & loot.' },
       knockback:{ kind:'passive', name:'Knockback', ic:'🥊', lvl:0, max:4,
-                 desc:'+25% knockback on all hits.' }
+                 desc:'+25% knockback on all hits.' },
+      laststand:{ kind:'passive', name:'Last Stand', ic:'🔥', lvl:0, max:4,
+                 desc:'+1.5% damage per 1% missing HP.' },
+      momentum: { kind:'passive', name:'Momentum', ic:'🏃', lvl:0, max:4,
+                 desc:'Moving builds +3% damage & speed (up to 10 stacks).' },
+      executioner:{ kind:'passive', name:'Executioner', ic:'⚰️', lvl:0, max:4,
+                 desc:'Enemies below 20% HP take +25% bonus damage.' },
+      bounty:  { kind:'passive', name:'Bounty Hunter', ic:'💎', lvl:0, max:4,
+                 desc:'Boss kills drop +50% bonus gold per level.' },
+      adrenaline:{ kind:'passive', name:'Adrenaline', ic:'💉', lvl:0, max:4,
+                 desc:'Taking damage boosts attack speed by 15% for 3s.' }
     };
   }
   let up;
@@ -1313,8 +1342,10 @@
     weaponKills = {};
     shake = 0; hitStop = 0; manualPause = false;
     // Weapon timers keyed by weapon id
-    weaponTimers = { knife:0, orbit:0, nova:0, bolt:0, garlic:0, balloon:0, pizza:0, slam:0, poison:0, missile:0, shield:0, lstrike:0, icewall:0 };
+    weaponTimers = { knife:0, orbit:0, nova:0, bolt:0, garlic:0, balloon:0, pizza:0, slam:0, poison:0, missile:0, shield:0, lstrike:0, icewall:0, boomerang:0, chains:0, meteor:0, clone:0, cross:0 };
     poisonClouds = []; iceWalls = []; secondWindUses = 0; shieldBashVfx = []; bossTrails = [];
+    momentumStacks = 0; adrenalineTimer = 0; clones = []; bannedUpgrades = {}; meteorImpacts = [];
+    bossLightning = []; bossBeams = []; bossFirePillars = []; bossQuakes = [];
     runGold = 0;
     bossIdx = Math.floor(Math.random() * BOSSES.length);
     // start with selected character's weapon
@@ -1351,36 +1382,53 @@
   let levelQueue = 0;
   function queueLevelUp() { levelQueue++; if (state === 'playing') openLevelUp(); }
 
+  const MAX_WEAPONS = 6, MAX_PASSIVES = 6;
+
+  function countSlots(kind) {
+    return Object.keys(up).filter(k => up[k].kind === kind && up[k].lvl > 0).length;
+  }
+
   function openLevelUp() {
     if (levelQueue <= 0) return;
     state = 'levelup';
     CG.gameplayStop();
-    CG.happytime(); // positive beat for ad pacing
+    CG.happytime();
     Audio2.levelup();
-    // Build candidate list
-    const owned = Object.keys(up).filter(k => up[k].lvl > 0 && up[k].lvl < up[k].max);
-    const fresh = Object.keys(up).filter(k => up[k].lvl === 0);
-    // Limit new weapons if already have many? keep simple: pool = owned upgrades + some new
+    const ownedWeapons = countSlots('weapon'), ownedPassives = countSlots('passive');
+    const owned = Object.keys(up).filter(k => up[k].lvl > 0 && up[k].lvl < up[k].max && !bannedUpgrades[k]);
+    const fresh = Object.keys(up).filter(k => up[k].lvl === 0 && !bannedUpgrades[k] &&
+      !(up[k].kind === 'weapon' && ownedWeapons >= MAX_WEAPONS) &&
+      !(up[k].kind === 'passive' && ownedPassives >= MAX_PASSIVES));
     let pool = [...owned, ...fresh];
-    // Shuffle
     for (let i = pool.length - 1; i > 0; i--) { const j = (Math.random()*(i+1))|0; [pool[i],pool[j]]=[pool[j],pool[i]]; }
     const picks = pool.slice(0, 3);
-    if (picks.length === 0) { // everything maxed → offer heal
-      applyChoice('_heal'); return;
-    }
+    if (picks.length === 0) { applyChoice('_heal'); return; }
     const cardsEl = document.getElementById('cards');
     cardsEl.innerHTML = '';
     picks.forEach(k => {
       const u = up[k];
+      const isNew = u.lvl === 0;
       const el = document.createElement('div');
       el.className = 'card';
       el.innerHTML = `<div class="ic">${u.ic}</div>
         <div class="nm">${u.name}</div>
-        <div class="lv">${u.lvl === 0 ? 'NEW' : 'LVL ' + (u.lvl+1)}</div>
+        <div class="lv">${isNew ? 'NEW' : 'LVL ' + (u.lvl+1)}</div>
         <div class="ds">${u.desc}</div>`;
       el.onclick = () => applyChoice(k);
+      if (isNew) {
+        const banBtn = document.createElement('div');
+        banBtn.className = 'ban-btn';
+        banBtn.textContent = '🚫 Ban';
+        banBtn.onclick = (ev) => { ev.stopPropagation(); bannedUpgrades[k] = true; hide('levelup'); openLevelUp(); };
+        el.appendChild(banBtn);
+      }
       cardsEl.appendChild(el);
     });
+    const skipBtn = document.createElement('div');
+    skipBtn.className = 'skip-btn';
+    skipBtn.textContent = 'Skip (+20 HP)';
+    skipBtn.onclick = () => applyChoice('_heal');
+    cardsEl.appendChild(skipBtn);
     show('levelup');
   }
 
@@ -1479,9 +1527,9 @@
       ability:'charge', chargeSpeed:320, chargeCd:4, projCd:0 },
     { id:'golem',    mrow:5,  name:'STONE COLOSSUS',     flying:false, speed:28, dmg:45, color:'#8a7a50',
       ability:'shockwave', swCd:3.5, swRadius:180, swDmg:20, projCd:0 },
-    { id:'lich',     mrow:13, name:'THE LICH KING',      flying:true,  speed:34, dmg:22, color:'#a040e0',
+    { id:'lich',     mrow:13, name:'THE DREAD LICH',      flying:true,  speed:34, dmg:22, color:'#a040e0',
       ability:'barrage', projCd:0.8, projSpeed:220, projDmg:18, projColor:'#c07bff', projCount:5 },
-    { id:'spider',   mrow:31, name:'BROODMOTHER',        flying:false, speed:50, dmg:25, color:'#40a050',
+    { id:'spider',   mrow:31, name:'SILK MATRIARCH',      flying:false, speed:50, dmg:25, color:'#40a050',
       ability:'spawn', spawnCd:3, spawnCount:4, projCd:0 },
     { id:'dragon',   mrow:20, name:'INFERNO WYRM',       flying:true,  speed:38, dmg:28, color:'#ff6020',
       ability:'breath', breathCd:2.5, breathArc:0.8, breathCount:8, projSpeed:260, projDmg:14, projColor:'#ff8a3a', projCd:0 },
@@ -1493,8 +1541,29 @@
       ability:'vortex', vortexCd:4.0, vortexDur:2.5, vortexPull:120, projCd:0 },
     { id:'minotaur', mrow:24, name:'WARLORD TAURUS',       flying:false, speed:44, dmg:40, color:'#c05030',
       ability:'leap', leapCd:3.5, leapRadius:140, leapDmg:25, projCd:0 },
-    { id:'serpent',  mrow:23, name:'WORLD SERPENT',         flying:false, speed:60, dmg:22, color:'#e0d040',
-      ability:'trail', trailCd:0.2, trailDmg:10, trailDur:4, projCd:0 }
+    { id:'serpent',  mrow:23, name:'THE DEVOURER',           flying:false, speed:60, dmg:22, color:'#e0d040',
+      ability:'trail', trailCd:0.2, trailDmg:10, trailDur:4, projCd:0 },
+    { id:'stormtitan', mrow:7, name:'STORM TITAN',       flying:false, speed:36, dmg:38, color:'#40c0ff',
+      ability:'lightning', lightningCd:1.8, lightningCount:3, lightningDmg:18, lightningRadius:50, projCd:0 },
+    { id:'shadowlord', mrow:26, name:'UMBRAL KNIGHT',     flying:false, speed:46, dmg:30, color:'#6030a0',
+      ability:'mirror', mirrorCd:5.0, mirrorCount:3, mirrorDur:4, projCd:0 },
+    { id:'frostqueen', mrow:4, name:'FROST QUEEN',       flying:false, speed:34, dmg:24, color:'#80e0ff',
+      ability:'blizzard', blizzardCd:4.0, blizzardRadius:200, blizzardDmg:8, blizzardDur:3, projCd:0 },
+    { id:'voidwalker', mrow:17, name:'RIFT WRAITH',       flying:true,  speed:52, dmg:26, color:'#a020c0',
+      ability:'warp', warpCd:3.5, warpRadius:150, projCd:0,
+      projSpeed:160, projDmg:10, projColor:'#c040ff', novaCount:10 },
+    { id:'plague',   mrow:27, name:'BLIGHT HERALD',       flying:false, speed:44, dmg:20, color:'#80c020',
+      ability:'plague', plagueCd:3.5, plagueRadius:60, plagueDmg:6, plagueDur:5, plagueGrow:30, projCd:0 },
+    { id:'crystal',  mrow:5, name:'CRYSTAL GOLEM',        flying:false, speed:26, dmg:48, color:'#60f0e0',
+      ability:'shatter', shatterCd:3.0, shatterCount:12, shatterSpeed:240, shatterDmg:14, projCd:0 },
+    { id:'bloodwitch', mrow:29, name:'BLOOD WITCH',       flying:true,  speed:38, dmg:22, color:'#e02040',
+      ability:'drain', drainCd:4.0, drainDur:2.0, drainDmg:8, drainHeal:0.04, projCd:0 },
+    { id:'thunderhawk', mrow:19, name:'STORM TALON',      flying:true,  speed:70, dmg:28, color:'#f0e040',
+      ability:'divebomb', diveCd:3.0, diveSpeed:500, diveDmg:22, diveRadius:60, projCd:0 },
+    { id:'demonking', mrow:15, name:'DEMON KING',         flying:true,  speed:40, dmg:32, color:'#ff3030',
+      ability:'firepillars', pillarCd:4.0, pillarCount:8, pillarRadius:180, pillarDmg:15, pillarDur:3, projCd:0 },
+    { id:'bonecolossus', mrow:30, name:'BONE COLOSSUS',   flying:false, speed:30, dmg:44, color:'#d0c8a0',
+      ability:'earthquake', quakeCd:4.5, quakeWaves:3, quakeDmg:12, quakeMaxRadius:250, projCd:0 }
   ];
   let bossIdx = 0;
 
@@ -1538,6 +1607,17 @@
   function damageEnemy(e, dmg, kx, ky, canCrit) {
     let crit = false;
     if (streakActive) dmg *= 2;
+    if (up.laststand && up.laststand.lvl > 0) {
+      const missingPct = 1 - player.hp / player.maxHp;
+      dmg *= 1 + missingPct * up.laststand.lvl * 0.015;
+    }
+    if (up.momentum && up.momentum.lvl > 0 && momentumStacks > 0) {
+      dmg *= 1 + momentumStacks * up.momentum.lvl * 0.03;
+    }
+    if (up.executioner && up.executioner.lvl > 0 && e.hp < e.maxHp * 0.2) {
+      dmg *= 1 + up.executioner.lvl * 0.25;
+    }
+    if (adrenalineTimer > 0) dmg *= 1.1;
     if (canCrit && player.critChance > 0 && Math.random() < player.critChance) { dmg *= 2; crit = true; juice(2, 0); }
     e.hp -= dmg; e.hit = 0.08;
     totalDmgDealt += dmg;
@@ -1572,10 +1652,14 @@
     // blood splat left on the ground (stacks with nearby splats to accumulate)
     addBloodDecal(e.x, e.y + e.r*0.4, e.boss);
     // cash drop (50% chance, bosses always drop)
-    if (e.boss || Math.random() < 0.5) gems.push({ x:e.x, y:e.y, v:e.xp, r:6, vx:rand(-30,30), vy:rand(-30,30) });
+    if (e.boss || Math.random() < 0.5) {
+      let gv = e.xp;
+      if (e.boss && up.bounty && up.bounty.lvl > 0) gv *= 1 + up.bounty.lvl * 0.5;
+      gems.push({ x:e.x, y:e.y, v:gv, r:6, vx:rand(-30,30), vy:rand(-30,30) });
+    }
     // poof particles
-    const pc = e.boss ? '#d02c6a' : '#f0c040';
-    for (let i=0;i<(e.boss?18:6);i++) particles.push({ x:e.x, y:e.y, vx:rand(-90,90), vy:rand(-90,90), t:0.4, c:pc, r:rand(2,4) });
+    const pc = e.boss ? (e.bossType.color || '#d02c6a') : '#f0c040';
+    for (let i=0;i<(e.boss?24:6);i++) particles.push({ x:e.x, y:e.y, vx:rand(e.boss?-140:-90,e.boss?140:90), vy:rand(e.boss?-140:-90,e.boss?140:90), t:e.boss?0.6:0.4, c:pc, r:rand(2,e.boss?6:4) });
     if (e.boss) { // boss drops big heal orb
       orbs.push({ x:e.x, y:e.y, type:'heal', r:12, t:20 });
       CG.happytime(); juice(16, 0.08);
@@ -1596,7 +1680,8 @@
 
   // ---- Weapons firing -------------------------------------------------
   function updateWeapons(dt) {
-    const cd = streakActive ? player.cdMul * 0.375 : player.cdMul;
+    let cd = streakActive ? player.cdMul * 0.375 : player.cdMul;
+    if (adrenalineTimer > 0 && up.adrenaline && up.adrenaline.lvl > 0) cd *= Math.max(0.5, 1 - up.adrenaline.lvl * 0.15);
     const ps = player.projSpd || 1;
     const kb = player.kbMul || 1;
 
@@ -1805,6 +1890,116 @@
       }
     }
 
+    // Boomerang Blade
+    if (up.boomerang.lvl > 0) {
+      weaponTimers.boomerang -= dt;
+      if (weaponTimers.boomerang <= 0) {
+        weaponTimers.boomerang = 1.8 * cd;
+        const a = Math.atan2(player.dirY, player.dirX);
+        const spd = 280 * ps;
+        const dmg = (7 + up.boomerang.lvl * 3) * player.dmg;
+        projectiles.push({ x:player.x, y:player.y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
+          r:10, dmg, pierce:99, life:0.5, kind:'boomerang', returning:false, origX:player.x, origY:player.y, age:0 });
+        Audio2.tone(350, 0.08, 'triangle', 0.06, 200);
+      }
+    }
+
+    // Spectral Chains (tethers to nearby enemies)
+    if (up.chains.lvl > 0) {
+      weaponTimers.chains -= dt;
+      if (weaponTimers.chains <= 0) {
+        weaponTimers.chains = 0.4;
+        const chainRange = 120 + up.chains.lvl * 20;
+        const maxTargets = 1 + up.chains.lvl;
+        let count = 0;
+        for (const e of enemies) {
+          if (count >= maxTargets) break;
+          const d = Math.sqrt(dist2(player.x, player.y, e.x, e.y));
+          if (d < chainRange) {
+            if (!e.chainHit || e.chainHit <= 0) {
+              damageEnemy(e, (3 + up.chains.lvl * 1.5) * player.dmg * 0.4, 0, 0);
+              e.chainHit = 0.4;
+              e.chained = 0.5;
+              count++;
+            }
+          }
+        }
+      }
+    }
+    for (const e of enemies) { if (e.chainHit > 0) e.chainHit -= dt; if (e.chained > 0) e.chained -= dt; }
+
+    // Meteor Strike
+    if (up.meteor.lvl > 0) {
+      weaponTimers.meteor -= dt;
+      if (weaponTimers.meteor <= 0) {
+        weaponTimers.meteor = (2.5 - up.meteor.lvl * 0.15) * cd;
+        const count = 1 + Math.floor(up.meteor.lvl / 2);
+        for (let i = 0; i < count; i++) {
+          let best = null, bestD = Infinity;
+          for (const e of enemies) {
+            const d = dist2(player.x, player.y, e.x, e.y);
+            if (d < 400*400 && d < bestD && !e.meteorTarget) { bestD = d; best = e; }
+          }
+          if (best) best.meteorTarget = true;
+          const tx = best ? best.x + rand(-30,30) : player.x + rand(-150,150);
+          const ty = best ? best.y + rand(-30,30) : player.y + rand(-150,150);
+          const mr = (45 + up.meteor.lvl * 8) * (player.areaMul || 1);
+          const mdmg = (15 + up.meteor.lvl * 5) * player.dmg;
+          setTimeout(() => {
+            for (const e2 of enemies) {
+              if (dist2(e2.x, e2.y, tx, ty) < mr*mr) damageEnemy(e2, mdmg, 0, 0, true);
+              if (e2.meteorTarget) e2.meteorTarget = false;
+            }
+            for (let j = 0; j < 14; j++) {
+              const pa = Math.random() * TAU;
+              particles.push({ x:tx+Math.cos(pa)*mr*0.4, y:ty+Math.sin(pa)*mr*0.4, vx:Math.cos(pa)*120, vy:Math.sin(pa)*120, t:0.4, c:j%2?'#ff6020':'#ffcc40', r:3+Math.random()*3 });
+            }
+            meteorImpacts.push({ x:tx, y:ty, r:mr, t:0.4 });
+            Audio2.tone(70, 0.2, 'sine', 0.15, 40); juice(4, 0);
+          }, 400 + i * 150);
+        }
+      }
+    }
+
+    // Shadow Clone update
+    if (up.clone.lvl > 0) {
+      const needed = up.clone.lvl;
+      while (clones.length < needed) clones.push({ x:player.x - 40 - clones.length*30, y:player.y, fireTimer:0 });
+      while (clones.length > needed) clones.pop();
+      for (const c of clones) {
+        const cdx = player.x - 40 - clones.indexOf(c)*30 - c.x;
+        const cdy = player.y - c.y;
+        c.x += cdx * 4 * dt; c.y += cdy * 4 * dt;
+        c.fireTimer -= dt;
+        if (c.fireTimer <= 0) {
+          c.fireTimer = 1.2 * cd;
+          let closest = null, closestD = Infinity;
+          for (const e of enemies) { const d = dist2(c.x,c.y,e.x,e.y); if (d < closestD) { closestD = d; closest = e; } }
+          if (closest) {
+            const ca = Math.atan2(closest.y - c.y, closest.x - c.x);
+            projectiles.push({ x:c.x, y:c.y, vx:Math.cos(ca)*250*ps, vy:Math.sin(ca)*250*ps,
+              r:6, dmg:(5+up.clone.lvl*2)*player.dmg*0.5, pierce:1, life:1.5, kind:'clone_bolt' });
+          }
+        }
+      }
+    }
+
+    // Holy Cross
+    if (up.cross.lvl > 0) {
+      weaponTimers.cross -= dt;
+      if (weaponTimers.cross <= 0) {
+        weaponTimers.cross = 1.6 * cd;
+        const dirs = up.cross.lvl >= 4 ? 8 : 4;
+        const cdmg = (6 + up.cross.lvl * 2.5) * player.dmg;
+        for (let i = 0; i < dirs; i++) {
+          const ca = (TAU * i / dirs);
+          projectiles.push({ x:player.x, y:player.y, vx:Math.cos(ca)*220*ps, vy:Math.sin(ca)*220*ps,
+            r:7, dmg:cdmg, pierce:3+up.cross.lvl, life:1.2, kind:'cross' });
+        }
+        Audio2.tone(440, 0.08, 'sine', 0.06, 280);
+      }
+    }
+
     // Fidget spinners (orbit) and Body Spray aura are continuous (in update()).
   }
 
@@ -1831,7 +2026,9 @@
     if (ml > 0.01) {
       mx /= (ml||1); my /= (ml||1);
       if (ml > 1) { mx = mx; my = my; }
-      const spd = player.speed * (player.speedMul||1) * Math.min(1, ml||1);
+      let spdMul = player.speedMul || 1;
+      if (player.blizzardSlow > 0) { spdMul *= 0.4; player.blizzardSlow -= dt; }
+      const spd = player.speed * spdMul * Math.min(1, ml||1);
       // per-axis movement so the player slides along solid objects instead of sticking
       const nx = player.x + mx * spd * dt;
       if (!circleBlocked(nx, player.y, player.r)) player.x = nx;
@@ -1845,6 +2042,17 @@
       player.moving = true; player.animTime += dt;
       player.bob += dt * 12;
     } else { player.bob = 0; player.moving = false; }
+
+    // Momentum passive
+    if (up.momentum && up.momentum.lvl > 0) {
+      if (player.moving) { momentumStacks = Math.min(momentumStacks + dt * 3, 10); }
+      else { momentumStacks = Math.max(0, momentumStacks - dt * 5); }
+    }
+    // Adrenaline passive decay
+    if (adrenalineTimer > 0) adrenalineTimer -= dt;
+    // Meteor impacts decay
+    for (const m of meteorImpacts) m.t -= dt;
+    meteorImpacts = meteorImpacts.filter(m => m.t > 0);
 
     // Camera follows
     camX = player.x - W/2; camY = player.y - H/2;
@@ -2005,9 +2213,88 @@
             e.bossAbilityTimer = bt.leapCd;
             Audio2.tone(100, 0.15, 'sine', 0.1, 60);
           } else if (bt.ability === 'trail') {
-            // Drop poison puddle at current position
             bossTrails.push({ x:e.x, y:e.y, r:40, t:bt.trailDur, dmg:bt.trailDmg, tick:0, color:'#e0d040' });
             e.bossAbilityTimer = bt.trailCd;
+          } else if (bt.ability === 'lightning') {
+            for (let i = 0; i < bt.lightningCount; i++) {
+              const la = Math.random() * TAU;
+              const ld = 40 + Math.random() * 200;
+              const lx = player.x + Math.cos(la) * ld, ly = player.y + Math.sin(la) * ld;
+              bossLightning.push({ x:lx, y:ly, r:bt.lightningRadius, t:0.5, dmg:bt.lightningDmg, tick:0, delay:i*0.15 });
+            }
+            e.bossAbilityTimer = bt.lightningCd;
+            Audio2.tone(900, 0.15, 'sawtooth', 0.12, 200); juice(10, 0.05);
+          } else if (bt.ability === 'mirror') {
+            e.mirrors = [];
+            for (let i = 0; i < bt.mirrorCount; i++) {
+              const ma = TAU * i / bt.mirrorCount;
+              e.mirrors.push({ offX: Math.cos(ma)*80, offY: Math.sin(ma)*80, t:bt.mirrorDur, fireTimer:1.0 });
+            }
+            e.bossAbilityTimer = bt.mirrorCd;
+            Audio2.tone(200, 0.2, 'sine', 0.15, 400);
+            for (let i = 0; i < 16; i++) { const pa = TAU*i/16; particles.push({ x:e.x, y:e.y, vx:Math.cos(pa)*120, vy:Math.sin(pa)*120, t:0.4, c:'#6030a0', r:3 }); }
+          } else if (bt.ability === 'blizzard') {
+            e.blizzardActive = bt.blizzardDur;
+            e.blizzardMax = bt.blizzardRadius;
+            e.blizzardR = 30;
+            e.blizzardCenter = { x:player.x, y:player.y };
+            e.bossAbilityTimer = bt.blizzardCd;
+            Audio2.tone(500, 0.25, 'sine', 0.15, 200);
+          } else if (bt.ability === 'warp') {
+            const wa = Math.random() * TAU;
+            const wd = 80 + Math.random() * bt.warpRadius;
+            const ox = player.x, oy = player.y;
+            player.x = e.x + Math.cos(wa) * wd;
+            player.y = e.y + Math.sin(wa) * wd;
+            for (let i = 0; i < 16; i++) { const pa = TAU*i/16; particles.push({ x:ox, y:oy, vx:Math.cos(pa)*100, vy:Math.sin(pa)*100, t:0.35, c:'#a020c0', r:3 }); particles.push({ x:player.x, y:player.y, vx:Math.cos(pa)*80, vy:Math.sin(pa)*80, t:0.4, c:'#c040ff', r:3 }); }
+            for (let i = 0; i < bt.novaCount; i++) {
+              const na = TAU * i / bt.novaCount;
+              enemyShots.push({ x:e.x, y:e.y, vx:Math.cos(na)*bt.projSpeed, vy:Math.sin(na)*bt.projSpeed, r:5, dmg:bt.projDmg, life:2.5, color:bt.projColor });
+            }
+            e.bossAbilityTimer = bt.warpCd;
+            Audio2.tone(700, 0.12, 'sine', 0.1, 100); juice(8, 0.04);
+            dmgVignette = 0.3;
+          } else if (bt.ability === 'plague') {
+            bossTrails.push({ x:e.x, y:e.y, r:bt.plagueRadius, t:bt.plagueDur, dmg:bt.plagueDmg, tick:0, color:'#80c020', grow:bt.plagueGrow });
+            e.bossAbilityTimer = bt.plagueCd;
+            Audio2.tone(60, 0.3, 'sawtooth', 0.2, 40);
+          } else if (bt.ability === 'shatter') {
+            for (let i = 0; i < bt.shatterCount; i++) {
+              const sa = TAU * i / bt.shatterCount;
+              enemyShots.push({ x:e.x, y:e.y, vx:Math.cos(sa)*bt.shatterSpeed, vy:Math.sin(sa)*bt.shatterSpeed, r:5, dmg:bt.shatterDmg, life:2.5, color:'#60f0e0', crystal:true });
+            }
+            for (let i = 0; i < 24; i++) { const pa = Math.random()*TAU; particles.push({ x:e.x, y:e.y, vx:Math.cos(pa)*200, vy:Math.sin(pa)*200, t:0.35, c:'#60f0e0', r:2+Math.random()*3 }); }
+            e.bossAbilityTimer = bt.shatterCd;
+            Audio2.tone(1200, 0.1, 'square', 0.08, 600); juice(10, 0.05);
+          } else if (bt.ability === 'drain') {
+            e.drainActive = bt.drainDur;
+            e.drainTarget = { x:player.x, y:player.y };
+            e.bossAbilityTimer = bt.drainCd;
+            Audio2.tone(150, 0.3, 'sine', 0.2, 300);
+          } else if (bt.ability === 'divebomb') {
+            if (d > 100) {
+              e.diving = true;
+              e.diveStart = { x:e.x, y:e.y };
+              e.diveTarget = { x:player.x, y:player.y };
+              e.diveTime = 0;
+              e.diveDur = d / bt.diveSpeed;
+            }
+            e.bossAbilityTimer = bt.diveCd;
+            Audio2.tone(800, 0.12, 'sawtooth', 0.08, 400);
+          } else if (bt.ability === 'firepillars') {
+            for (let i = 0; i < bt.pillarCount; i++) {
+              const pa = TAU * i / bt.pillarCount + Math.random() * 0.3;
+              const pr = 60 + Math.random() * bt.pillarRadius;
+              bossFirePillars.push({ x:player.x+Math.cos(pa)*pr, y:player.y+Math.sin(pa)*pr, r:30, t:bt.pillarDur, dmg:bt.pillarDmg, tick:0, delay:i*0.12 });
+            }
+            e.bossAbilityTimer = bt.pillarCd;
+            Audio2.tone(100, 0.25, 'sawtooth', 0.15, 50); juice(8, 0.04);
+          } else if (bt.ability === 'earthquake') {
+            for (let i = 0; i < bt.quakeWaves; i++) {
+              bossQuakes.push({ x:e.x, y:e.y, r:0, maxR:bt.quakeMaxRadius, t:1.5, dmg:bt.quakeDmg, tick:0, delay:i*0.4, speed:200+i*60 });
+            }
+            e.bossAbilityTimer = bt.quakeCd;
+            Audio2.tone(40, 0.4, 'sine', 0.3, 30); juice(12, 0.06);
           }
         }
         // Vortex continuous pull
@@ -2045,6 +2332,72 @@
             Audio2.tone(60, 0.25, 'sine', 0.2, 30); juice(12, 0.06);
           }
         }
+        // Mirror shadows — follow boss and fire at player
+        if (e.mirrors) {
+          for (const m of e.mirrors) {
+            m.t -= dt; m.fireTimer -= dt;
+            if (m.fireTimer <= 0 && m.t > 0) {
+              m.fireTimer = 1.2;
+              const mx = e.x + m.offX, my = e.y + m.offY;
+              const ma = Math.atan2(player.y - my, player.x - mx);
+              enemyShots.push({ x:mx, y:my, vx:Math.cos(ma)*180, vy:Math.sin(ma)*180, r:5, dmg:10, life:3, color:'#8050c0' });
+            }
+          }
+          e.mirrors = e.mirrors.filter(m => m.t > 0);
+          if (e.mirrors.length === 0) e.mirrors = undefined;
+        }
+        // Blizzard — expanding ice ring
+        if (e.blizzardActive > 0) {
+          e.blizzardActive -= dt;
+          e.blizzardR = Math.min(e.blizzardR + dt * 80, e.blizzardMax);
+          const bc = e.blizzardCenter;
+          const bd = Math.hypot(player.x - bc.x, player.y - bc.y);
+          if (bd < e.blizzardR) {
+            player.blizzardSlow = 0.15;
+            if (player.iframe <= 0 && Math.random() < dt * 3) {
+              let bdmg = Math.max(1, e.bossType.blizzardDmg * (1 + difficulty * 0.08) - player.armorFlat);
+              player.hp -= bdmg; player.iframe = 0.3; player.flash = 0.1;
+              dmgVignette = 0.25; Audio2.hurt();
+              if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+            }
+          }
+        }
+        // Drain beam — damages player, heals boss
+        if (e.drainActive > 0) {
+          e.drainActive -= dt;
+          e.drainTarget = { x:player.x, y:player.y };
+          const dd = Math.hypot(player.x - e.x, player.y - e.y);
+          if (dd < 300 && player.iframe <= 0 && Math.random() < dt * 4) {
+            let ddmg = Math.max(1, bt.drainDmg * (1 + difficulty * 0.08) - player.armorFlat);
+            player.hp -= ddmg; player.iframe = 0.2; player.flash = 0.08;
+            e.hp = Math.min(e.maxHp, e.hp + e.maxHp * bt.drainHeal);
+            dmgVignette = 0.2;
+          }
+        }
+        // Divebomb — swoop at high speed
+        if (e.diving) {
+          e.diveTime += dt;
+          const dp = Math.min(e.diveTime / e.diveDur, 1);
+          e.x = e.diveStart.x + (e.diveTarget.x - e.diveStart.x) * dp;
+          e.y = e.diveStart.y + (e.diveTarget.y - e.diveStart.y) * dp;
+          if (Math.random() < dt * 20) {
+            bossTrails.push({ x:e.x, y:e.y, r:20, t:0.6, dmg:0, tick:99, color:'#f0e040' });
+          }
+          if (dp >= 1) {
+            e.diving = false;
+            const dr = bt.diveRadius;
+            if (dist2(e.x, e.y, player.x, player.y) < dr * dr) {
+              if (player.iframe <= 0) {
+                let ddmg = Math.max(1, bt.diveDmg * (1 + difficulty * 0.08) - player.armorFlat);
+                player.hp -= ddmg; player.iframe = 0.6; player.flash = 0.15;
+                dmgVignette = 0.45; Audio2.hurt(); juice(14, 0.08);
+                if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+              }
+            }
+            for (let i = 0; i < 16; i++) { const pa = TAU*i/16; particles.push({ x:e.x, y:e.y, vx:Math.cos(pa)*160, vy:Math.sin(pa)*160, t:0.3, c:'#f0e040', r:3+Math.random()*2 }); }
+            Audio2.tone(200, 0.15, 'sine', 0.12, 80); juice(10, 0.05);
+          }
+        }
       }
       // contact damage
       const rr = (e.r + player.r);
@@ -2057,6 +2410,7 @@
             let dmg = Math.max(1, e.dmg * (1 + difficulty * 0.08) - player.armorFlat);
             player.hp -= dmg;
             player.iframe = 0.6; player.flash = 0.15;
+            if (up.adrenaline && up.adrenaline.lvl > 0) adrenalineTimer = 3;
             dmgVignette = 0.45;
             Audio2.hurt(); juice(11, 0.07);
             if (player.thorns > 0) damageEnemy(e, dmg * player.thorns, 0, 0);
@@ -2091,6 +2445,7 @@
           } else {
             let dmg = Math.max(1, s.dmg * (1 + difficulty * 0.08) - player.armorFlat);
             player.hp -= dmg; player.iframe = 0.6; player.flash = 0.15;
+            if (up.adrenaline && up.adrenaline.lvl > 0) adrenalineTimer = 3;
             dmgVignette = 0.45;
             Audio2.hurt(); juice(9, 0.05);
             if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
@@ -2164,7 +2519,8 @@
     // Boss poison trails (damage player)
     for (const tr of bossTrails) {
       tr.t -= dt; tr.tick -= dt;
-      if (tr.tick <= 0 && dist2(tr.x, tr.y, player.x, player.y) < tr.r * tr.r) {
+      if (tr.grow) tr.r += tr.grow * dt;
+      if (tr.dmg > 0 && tr.tick <= 0 && dist2(tr.x, tr.y, player.x, player.y) < tr.r * tr.r) {
         tr.tick = 0.5;
         if (player.iframe <= 0) {
           let tdmg = Math.max(1, tr.dmg * (1 + difficulty * 0.08) - player.armorFlat);
@@ -2175,6 +2531,56 @@
       }
     }
     bossTrails = bossTrails.filter(tr => tr.t > 0);
+
+    // Boss lightning strikes
+    for (const l of bossLightning) {
+      if (l.delay > 0) { l.delay -= dt; continue; }
+      l.t -= dt; l.tick -= dt;
+      if (l.tick <= 0 && dist2(l.x, l.y, player.x, player.y) < l.r * l.r) {
+        l.tick = 9;
+        if (player.iframe <= 0) {
+          let ldmg = Math.max(1, l.dmg * (1 + difficulty * 0.08) - player.armorFlat);
+          player.hp -= ldmg; player.iframe = 0.5; player.flash = 0.15;
+          dmgVignette = 0.4; Audio2.hurt(); juice(10, 0.05);
+          if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+        }
+      }
+    }
+    bossLightning = bossLightning.filter(l => l.t > 0);
+
+    // Boss fire pillars
+    for (const p of bossFirePillars) {
+      if (p.delay > 0) { p.delay -= dt; continue; }
+      p.t -= dt; p.tick -= dt;
+      if (p.tick <= 0 && dist2(p.x, p.y, player.x, player.y) < p.r * p.r) {
+        p.tick = 0.5;
+        if (player.iframe <= 0) {
+          let pdmg = Math.max(1, p.dmg * (1 + difficulty * 0.08) - player.armorFlat);
+          player.hp -= pdmg; player.iframe = 0.3; player.flash = 0.1;
+          dmgVignette = 0.3; Audio2.hurt();
+          if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+        }
+      }
+    }
+    bossFirePillars = bossFirePillars.filter(p => p.t > 0);
+
+    // Boss earthquake waves
+    for (const q of bossQuakes) {
+      if (q.delay > 0) { q.delay -= dt; continue; }
+      q.t -= dt; q.r = Math.min(q.r + q.speed * dt, q.maxR);
+      q.tick -= dt;
+      const pd = Math.hypot(player.x - q.x, player.y - q.y);
+      if (q.tick <= 0 && Math.abs(pd - q.r) < 40) {
+        q.tick = 9;
+        if (player.iframe <= 0) {
+          let qdmg = Math.max(1, q.dmg * (1 + difficulty * 0.08) - player.armorFlat);
+          player.hp -= qdmg; player.iframe = 0.4; player.flash = 0.12;
+          dmgVignette = 0.35; Audio2.hurt(); juice(8, 0.04);
+          if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+        }
+      }
+    }
+    bossQuakes = bossQuakes.filter(q => q.t > 0);
 
     // Ice walls (barrier + slow + damage)
     for (const w of iceWalls) {
@@ -2220,6 +2626,18 @@
         }
       }
       p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt;
+      if (p.kind === 'boomerang') {
+        p.age = (p.age || 0) + dt;
+        if (p.age > 0.4 && !p.returning) {
+          p.returning = true; p.life = 1.5; p.hitSet.clear();
+        }
+        if (p.returning) {
+          const dx = player.x - p.x, dy = player.y - p.y;
+          const d = Math.sqrt(dx*dx+dy*dy);
+          if (d < 20) { p.life = 0; }
+          else { const spd = Math.hypot(p.vx,p.vy); p.vx = dx/d*spd*1.02; p.vy = dy/d*spd*1.02; }
+        }
+      }
 
       // Water balloon: no contact damage — splash-explodes when it lands.
       if (p.kind === 'balloon') {
@@ -2237,7 +2655,7 @@
         if (dist2(p.x,p.y,e.x,e.y) < rr*rr) {
           damageEnemy(e, p.dmg, p.vx*0.02, p.vy*0.02, true);
           p.hitSet.add(e);
-          if (p.kind !== 'pizza') p.pierce--; // pizza pierces freely both ways
+          if (p.kind !== 'pizza' && p.kind !== 'boomerang') p.pierce--;
           if (p.kind === 'bolt' && p.chain > 0) {
             // ricochet to next nearest not-yet-hit
             let best=null, bd=200*200;
@@ -2395,8 +2813,31 @@
     }
     if (e.boss) {
       ctx.imageSmoothingEnabled = true;
-      ctx.fillStyle='#000'; ctx.fillRect(sx-e.r, sy-e.r-14, e.r*2, 6);
-      ctx.fillStyle='#d02c6a'; ctx.fillRect(sx-e.r, sy-e.r-14, e.r*2*(e.hp/e.maxHp), 6);
+      const bc = e.bossType.color || '#d02c6a';
+      const pulse = 0.5 + 0.5 * Math.sin(gameTime * 3);
+      // Glowing aura
+      ctx.save();
+      ctx.shadowColor = bc; ctx.shadowBlur = 25 + pulse * 15;
+      ctx.strokeStyle = bc; ctx.lineWidth = 2; ctx.globalAlpha = 0.3 + pulse * 0.15;
+      ctx.beginPath(); ctx.arc(sx, sy - size * 0.15, size * 0.55, 0, TAU); ctx.stroke();
+      ctx.globalAlpha = 0.15 + pulse * 0.08;
+      ctx.beginPath(); ctx.arc(sx, sy - size * 0.15, size * 0.7, 0, TAU); ctx.stroke();
+      ctx.restore();
+      // HP bar
+      const barW = e.r * 2.2, barH = 7, barX = sx - barW/2, barY = sy - e.r - 22;
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.beginPath(); ctx.roundRect(barX-1, barY-1, barW+2, barH+2, 3); ctx.fill();
+      ctx.fillStyle = bc;
+      ctx.beginPath(); ctx.roundRect(barX, barY, barW * (e.hp/e.maxHp), barH, 2); ctx.fill();
+      ctx.shadowColor = bc; ctx.shadowBlur = 8;
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.roundRect(barX, barY, barW * (e.hp/e.maxHp), barH * 0.35, 1); ctx.fill();
+      ctx.shadowBlur = 0;
+      // Name plate
+      ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+      ctx.strokeText(e.bossType.name, sx, barY - 3);
+      ctx.fillStyle = bc;
+      ctx.fillText(e.bossType.name, sx, barY - 3);
     }
   }
 
@@ -2612,6 +3053,236 @@
       }
     }
 
+    // Boss lightning strikes
+    for (const l of bossLightning) {
+      if (l.delay > 0) continue;
+      const lx = l.x - camX, ly = l.y - camY;
+      const la = Math.min(l.t / 0.2, 1);
+      ctx.save();
+      ctx.shadowColor = '#40c0ff'; ctx.shadowBlur = 30;
+      // Strike zone
+      const grd = ctx.createRadialGradient(lx, ly, 0, lx, ly, l.r);
+      grd.addColorStop(0, `rgba(200,240,255,${la * 0.6})`);
+      grd.addColorStop(0.4, `rgba(80,200,255,${la * 0.4})`);
+      grd.addColorStop(1, 'rgba(40,120,255,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(lx, ly, l.r, 0, TAU); ctx.fill();
+      // Lightning bolt from sky
+      if (l.t > 0.25) {
+        ctx.strokeStyle = `rgba(200,240,255,${la * 0.9})`; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(lx + (Math.random()-0.5)*10, ly - 400);
+        for (let s = 0; s < 8; s++) {
+          const sy2 = ly - 400 + (400/8)*(s+1);
+          ctx.lineTo(lx + (Math.random()-0.5)*30, sy2);
+        }
+        ctx.stroke();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(lx, ly - 400); ctx.lineTo(lx + (Math.random()-0.5)*5, ly); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Boss mirror shadows
+    for (const e of enemies) {
+      if (e.boss && e.mirrors) {
+        for (const m of e.mirrors) {
+          const mx = e.x + m.offX - camX, my = e.y + m.offY - camY;
+          const ma = Math.min(m.t / 0.5, 1) * 0.35;
+          ctx.save();
+          ctx.globalAlpha = ma;
+          ctx.filter = 'brightness(0.2) saturate(0)';
+          if (IMG.monsters) {
+            const col = DIRCOL[e.faceDir] + (Math.floor(e.animTime*7) % 2);
+            const msize = e.r * 2.6;
+            ctx.drawImage(IMG.monsters, col*32, e.mrow*32, 32, 32, mx-msize/2, my-msize*0.62, msize, msize);
+          }
+          ctx.filter = 'none';
+          ctx.shadowColor = '#6030a0'; ctx.shadowBlur = 15;
+          ctx.strokeStyle = `rgba(96,48,160,${ma})`; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(mx, my - 10, 20, 0, TAU); ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
+    // Boss blizzard effect
+    for (const e of enemies) {
+      if (e.boss && e.blizzardActive > 0) {
+        const bc = e.blizzardCenter;
+        const bx = bc.x - camX, by = bc.y - camY;
+        const ba = Math.min(e.blizzardActive / 0.5, 1) * 0.5;
+        ctx.save();
+        ctx.shadowColor = '#80e0ff'; ctx.shadowBlur = 20;
+        // Ice ring
+        const grd = ctx.createRadialGradient(bx, by, e.blizzardR * 0.3, bx, by, e.blizzardR);
+        grd.addColorStop(0, `rgba(128,224,255,${ba * 0.15})`);
+        grd.addColorStop(0.7, `rgba(100,200,255,${ba * 0.3})`);
+        grd.addColorStop(1, 'rgba(60,160,255,0)');
+        ctx.fillStyle = grd;
+        ctx.beginPath(); ctx.arc(bx, by, e.blizzardR, 0, TAU); ctx.fill();
+        // Spinning ice particles
+        ctx.strokeStyle = `rgba(180,240,255,${ba * 0.7})`; ctx.lineWidth = 2;
+        for (let i = 0; i < 12; i++) {
+          const ia = gameTime * 2 + i * TAU / 12;
+          const ir = e.blizzardR * (0.5 + 0.3 * Math.sin(gameTime * 3 + i));
+          const ix = bx + Math.cos(ia) * ir, iy = by + Math.sin(ia) * ir;
+          ctx.beginPath(); ctx.arc(ix, iy, 2 + Math.sin(gameTime*5+i)*1, 0, TAU); ctx.stroke();
+        }
+        ctx.strokeStyle = `rgba(200,240,255,${ba * 0.5})`; ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 8]);
+        ctx.beginPath(); ctx.arc(bx, by, e.blizzardR, 0, TAU); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+    }
+
+    // Boss drain beam
+    for (const e of enemies) {
+      if (e.boss && e.drainActive > 0) {
+        const ex = e.x - camX, ey = e.y - camY;
+        const tx = e.drainTarget.x - camX, ty = e.drainTarget.y - camY;
+        const da = Math.min(e.drainActive / 0.3, 1);
+        ctx.save();
+        ctx.shadowColor = '#e02040'; ctx.shadowBlur = 15;
+        // Main beam
+        ctx.strokeStyle = `rgba(224,32,64,${da * 0.6})`; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(ex, ey - 15); ctx.lineTo(tx, ty); ctx.stroke();
+        ctx.strokeStyle = `rgba(255,120,140,${da * 0.4})`; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(ex, ey - 15); ctx.lineTo(tx, ty); ctx.stroke();
+        // Pulsing particles along beam
+        for (let i = 0; i < 6; i++) {
+          const bp = (gameTime * 3 + i * 0.15) % 1;
+          const bpx = ex + (tx - ex) * bp, bpy = ey - 15 + (ty - ey + 15) * bp;
+          ctx.fillStyle = `rgba(255,80,100,${da * (1 - bp)})`;
+          ctx.beginPath(); ctx.arc(bpx + (Math.random()-0.5)*6, bpy + (Math.random()-0.5)*6, 3, 0, TAU); ctx.fill();
+        }
+        // Heal indicator on boss
+        ctx.fillStyle = `rgba(80,255,80,${da * 0.5})`; ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center'; ctx.fillText('+HP', ex, ey - 30);
+        ctx.restore();
+      }
+    }
+
+    // Boss divebomb trail
+    for (const e of enemies) {
+      if (e.boss && e.diving) {
+        const ex = e.x - camX, ey = e.y - camY;
+        ctx.save();
+        ctx.shadowColor = '#f0e040'; ctx.shadowBlur = 20;
+        ctx.strokeStyle = 'rgba(240,224,64,0.6)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(ex, ey, 25, 0, TAU); ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // Boss fire pillars
+    for (const p of bossFirePillars) {
+      if (p.delay > 0) {
+        // Telegraph — warning circle before pillar appears
+        const px2 = p.x - camX, py2 = p.y - camY;
+        const wa = 0.5 + 0.5 * Math.sin(gameTime * 10);
+        ctx.save();
+        ctx.strokeStyle = `rgba(255,60,30,${wa * 0.6})`; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.arc(px2, py2, p.r, 0, TAU); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+        continue;
+      }
+      const px2 = p.x - camX, py2 = p.y - camY;
+      const pa = Math.min(p.t / 0.5, 1);
+      ctx.save();
+      ctx.shadowColor = '#ff3030'; ctx.shadowBlur = 25;
+      // Fire column
+      const pillarH = 80 * pa;
+      const grd = ctx.createLinearGradient(px2, py2, px2, py2 - pillarH);
+      grd.addColorStop(0, `rgba(255,60,20,${pa * 0.7})`);
+      grd.addColorStop(0.4, `rgba(255,120,30,${pa * 0.5})`);
+      grd.addColorStop(0.8, `rgba(255,200,60,${pa * 0.3})`);
+      grd.addColorStop(1, 'rgba(255,255,200,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.moveTo(px2 - p.r * 0.6, py2);
+      ctx.quadraticCurveTo(px2 - p.r * 0.3, py2 - pillarH * 0.5, px2, py2 - pillarH);
+      ctx.quadraticCurveTo(px2 + p.r * 0.3, py2 - pillarH * 0.5, px2 + p.r * 0.6, py2);
+      ctx.fill();
+      // Base glow
+      const bgrd = ctx.createRadialGradient(px2, py2, 0, px2, py2, p.r);
+      bgrd.addColorStop(0, `rgba(255,80,20,${pa * 0.5})`);
+      bgrd.addColorStop(1, 'rgba(255,40,10,0)');
+      ctx.fillStyle = bgrd;
+      ctx.beginPath(); ctx.arc(px2, py2, p.r, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+
+    // Boss earthquake waves
+    for (const q of bossQuakes) {
+      if (q.delay > 0) continue;
+      const qx = q.x - camX, qy = q.y - camY;
+      const qa = Math.min(q.t / 0.3, 1) * (1 - q.r / q.maxR);
+      ctx.save();
+      ctx.shadowColor = '#d0c8a0'; ctx.shadowBlur = 10;
+      ctx.strokeStyle = `rgba(208,200,160,${qa * 0.7})`; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(qx, qy, q.r, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = `rgba(180,160,120,${qa * 0.4})`; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(qx, qy, q.r * 0.95, 0, TAU); ctx.stroke();
+      // Ground crack lines
+      for (let i = 0; i < 8; i++) {
+        const ca = TAU * i / 8;
+        const cr = q.r * 0.3;
+        ctx.strokeStyle = `rgba(140,120,80,${qa * 0.5})`; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(qx + Math.cos(ca) * (q.r - 20), qy + Math.sin(ca) * (q.r - 20));
+        ctx.lineTo(qx + Math.cos(ca) * (q.r + 5), qy + Math.sin(ca) * (q.r + 5));
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Spectral chains
+    if (up && up.chains && up.chains.lvl > 0) {
+      const px = player.x - camX, py = player.y - camY;
+      for (const e of enemies) {
+        if (e.chained > 0) {
+          const ex = e.x - camX, ey = e.y - camY;
+          ctx.save();
+          ctx.strokeStyle = `rgba(100,180,255,${e.chained})`;
+          ctx.lineWidth = 2; ctx.shadowColor = '#60b0ff'; ctx.shadowBlur = 8;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(ex, ey); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.restore();
+        }
+      }
+    }
+
+    // Shadow clones
+    for (const c of clones) {
+      const cx = c.x - camX, cy = c.y - camY;
+      ctx.save();
+      ctx.globalAlpha = 0.4;
+      const base = DIRCOL[player.faceDir];
+      const col = player.moving ? base + (Math.floor(player.animTime * 8) % 2) : base;
+      ctx.filter = 'brightness(0.3) saturate(0)';
+      ctx.drawImage(IMG.hero, col*32, heroRow*32, 32, 32, cx-16, cy-24, 32, 32);
+      ctx.filter = 'none';
+      ctx.restore();
+    }
+
+    // Meteor impacts
+    for (const m of meteorImpacts) {
+      const mx = m.x - camX, my = m.y - camY;
+      const alpha = m.t / 0.4;
+      ctx.save();
+      ctx.shadowColor = '#ff6020'; ctx.shadowBlur = 20;
+      const grd = ctx.createRadialGradient(mx, my, 0, mx, my, m.r);
+      grd.addColorStop(0, `rgba(255,120,30,${alpha * 0.6})`);
+      grd.addColorStop(0.6, `rgba(255,80,20,${alpha * 0.3})`);
+      grd.addColorStop(1, 'rgba(200,40,10,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(mx, my, m.r, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+
     // Shield bash cone flash
     for (const v of shieldBashVfx) {
       const sx = v.x - camX, sy = v.y - camY;
@@ -2815,6 +3486,21 @@
         ctx.fillStyle='#ff8a40'; ctx.shadowColor='#ff6020'; ctx.shadowBlur=8;
         ctx.beginPath(); ctx.arc(-p.r-2, 0, 3, 0, TAU); ctx.fill();
         ctx.shadowBlur=0;
+      } else if (p.kind==='boomerang') {
+        ctx.rotate(gameTime * 12);
+        ctx.fillStyle='#c0d0e8'; ctx.strokeStyle='#6080b0'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(0,-p.r); ctx.quadraticCurveTo(p.r,-p.r,p.r,0);
+        ctx.quadraticCurveTo(p.r,2,0,2); ctx.quadraticCurveTo(-p.r,2,-p.r,0);
+        ctx.quadraticCurveTo(-p.r,-p.r,0,-p.r); ctx.fill(); ctx.stroke();
+      } else if (p.kind==='cross') {
+        ctx.shadowColor='#ffe080'; ctx.shadowBlur=10;
+        ctx.fillStyle='#ffe080';
+        ctx.fillRect(-2,-p.r,4,p.r*2); ctx.fillRect(-p.r,-2,p.r*2,4);
+        ctx.shadowBlur=0;
+      } else if (p.kind==='clone_bolt') {
+        ctx.rotate(Math.atan2(p.vy,p.vx));
+        ctx.fillStyle='rgba(140,120,200,0.8)'; ctx.shadowColor='#8070c0'; ctx.shadowBlur=8;
+        ctx.beginPath(); ctx.arc(0,0,p.r,0,TAU); ctx.fill(); ctx.shadowBlur=0;
       } else {
         ctx.fillStyle='#e8e8f0'; ctx.beginPath(); ctx.arc(0,0,p.r,0,TAU); ctx.fill();
       }
@@ -3031,7 +3717,7 @@
     let dt = (now - last) / 1000; last = now;
     dt = Math.min(dt, 0.05); // clamp to avoid tunneling on lag
     if (state === 'playing') {
-      if (hitStop > 0) hitStop -= dt;   // brief freeze on big hits
+      if (hitStop > 0) hitStop -= dt;
       else update(dt);
     }
     if (state === 'menu') drawMenuScene(dt);
@@ -3143,30 +3829,69 @@
   });
 
   // ---- Animated menu scene --------------------------------------------
-  const menuScene = { active: false, embers: [], monsters: [], scroll: 0 };
+  const menuScene = { active: false, embers: [], monsters: [], bosses: [], sparks: [], runes: [], orbs: [], scroll: 0, t: 0, lightning: 0 };
 
   function initMenuScene() {
     const sc = document.getElementById('menuScene'); if (!sc) return;
     sc.width = window.innerWidth; sc.height = window.innerHeight;
-    menuScene.active = true;
+    const W = sc.width, H = sc.height;
+    menuScene.active = true; menuScene.t = 0; menuScene.lightning = 0;
     menuScene.embers = [];
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 60; i++) {
       menuScene.embers.push({
-        x: Math.random() * sc.width, y: Math.random() * sc.height,
-        vx: (Math.random() - 0.5) * 0.3, vy: -0.4 - Math.random() * 0.8,
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.4, vy: -0.5 - Math.random() * 1.2,
         r: 1.5 + Math.random() * 2.5, life: Math.random(),
         hue: 15 + Math.random() * 25
       });
     }
-    menuScene.monsters = [];
-    const monsterRows = [0,1,2,3,4,5,6,7];
+    menuScene.sparks = [];
+    for (let i = 0; i < 30; i++) {
+      menuScene.sparks.push({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2,
+        r: 0.5 + Math.random() * 1.5, life: Math.random(),
+        color: ['#ff4060','#40c0ff','#c060f0','#60f0e0','#f0e040','#ff6020'][Math.floor(Math.random()*6)]
+      });
+    }
+    menuScene.runes = [];
+    for (let i = 0; i < 8; i++) {
+      menuScene.runes.push({
+        x: W * 0.1 + Math.random() * W * 0.8, y: H * 0.15 + Math.random() * H * 0.6,
+        r: 20 + Math.random() * 30, phase: Math.random() * Math.PI * 2,
+        speed: 0.3 + Math.random() * 0.5, symbol: ['⚔','☠','🔥','⚡','💀','🌀','✦','⛧'][i]
+      });
+    }
+    menuScene.orbs = [];
     for (let i = 0; i < 12; i++) {
+      menuScene.orbs.push({
+        x: Math.random() * W, y: H * 0.2 + Math.random() * H * 0.5,
+        vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.3,
+        r: 15 + Math.random() * 25, phase: Math.random() * Math.PI * 2,
+        hue: Math.random() * 360
+      });
+    }
+    menuScene.monsters = [];
+    const monsterRows = [0,1,2,3,6,8,9,10,12,17];
+    for (let i = 0; i < 16; i++) {
       const row = monsterRows[i % monsterRows.length];
       menuScene.monsters.push({
-        x: Math.random() * sc.width, y: sc.height * 0.50 + Math.random() * sc.height * 0.42,
-        row, speed: 0.3 + Math.random() * 0.6,
-        dir: Math.random() < 0.5 ? -1 : 1, scale: 2.5 + Math.random() * 1.5,
+        x: Math.random() * W, y: H * 0.50 + Math.random() * H * 0.38,
+        row, speed: 0.3 + Math.random() * 0.5,
+        dir: Math.random() < 0.5 ? -1 : 1, scale: 2.0 + Math.random() * 1.2,
         animT: Math.random() * 10
+      });
+    }
+    menuScene.bosses = [];
+    const bossPool = BOSSES.slice();
+    for (let i = 0; i < Math.min(5, bossPool.length); i++) {
+      const b = bossPool[i];
+      menuScene.bosses.push({
+        x: W * 0.1 + (W * 0.8 / 5) * i + Math.random() * 40,
+        y: H * 0.52 + Math.random() * H * 0.12,
+        boss: b, speed: 0.15 + Math.random() * 0.25,
+        dir: Math.random() < 0.5 ? -1 : 1, scale: 4.5,
+        animT: Math.random() * 10, glowPhase: Math.random() * Math.PI * 2
       });
     }
   }
@@ -3182,8 +3907,11 @@
     g.imageSmoothingEnabled = false;
 
     menuScene.scroll += dt * 12;
+    menuScene.t += dt;
+    const t = menuScene.t;
     const TS = 64;
 
+    // Ground tiles
     if (IMG.ground) {
       const cols = Math.ceil(W / TS) + 2;
       const rows = Math.ceil(H / TS) + 2;
@@ -3198,6 +3926,7 @@
       g.fillStyle = '#1a2010'; g.fillRect(0, 0, W, H);
     }
 
+    // Objects (trees etc)
     if (IMG.objects) {
       const objScroll = menuScene.scroll * 0.8;
       const spacing = 200;
@@ -3211,7 +3940,7 @@
       }
     }
 
-    const dc = DIRCOL.down * 32;
+    // Regular monsters (background layer, more transparent)
     for (const m of menuScene.monsters) {
       m.animT += dt;
       m.x += m.speed * m.dir;
@@ -3220,57 +3949,176 @@
       if (IMG.monsters) {
         const frame = Math.floor(m.animT * 4) % 2;
         const col = (m.dir > 0 ? DIRCOL.right : DIRCOL.left) + frame;
-        g.globalAlpha = 0.55;
+        g.globalAlpha = 0.35;
         g.drawImage(IMG.monsters, col * 32, m.row * 32, 32, 32,
           m.x | 0, m.y | 0, 32 * m.scale, 32 * m.scale);
         g.globalAlpha = 1;
       }
     }
 
+    // Boss showcase — large, glowing, with auras and name plates
+    for (const b of menuScene.bosses) {
+      b.animT += dt; b.glowPhase += dt * 2;
+      b.x += b.speed * b.dir;
+      if (b.x > W + 100) { b.x = -80; b.dir = 1; }
+      if (b.x < -100) { b.x = W + 80; b.dir = -1; }
+      const bx = b.x | 0, by = b.y | 0;
+      const bc = b.boss.color;
+      const pulse = 0.5 + 0.5 * Math.sin(b.glowPhase);
+      const sz = 32 * b.scale;
+      if (IMG.monsters) {
+        // Boss aura glow
+        g.save();
+        g.shadowColor = bc; g.shadowBlur = 30 + pulse * 20;
+        g.globalAlpha = 0.25 + pulse * 0.15;
+        g.strokeStyle = bc; g.lineWidth = 2;
+        g.beginPath(); g.arc(bx + sz/2, by + sz*0.35, sz * 0.45, 0, Math.PI * 2); g.stroke();
+        g.globalAlpha = 0.12 + pulse * 0.08;
+        g.beginPath(); g.arc(bx + sz/2, by + sz*0.35, sz * 0.6, 0, Math.PI * 2); g.stroke();
+        g.restore();
+        // Ground glow
+        g.save();
+        const ggrd = g.createRadialGradient(bx + sz/2, by + sz*0.8, 0, bx + sz/2, by + sz*0.8, sz*0.5);
+        ggrd.addColorStop(0, bc + '30');
+        ggrd.addColorStop(1, bc + '00');
+        g.fillStyle = ggrd;
+        g.beginPath(); g.ellipse(bx + sz/2, by + sz*0.8, sz*0.5, sz*0.2, 0, 0, Math.PI * 2); g.fill();
+        g.restore();
+        // Boss sprite
+        const frame = Math.floor(b.animT * 3) % 2;
+        const col = (b.dir > 0 ? DIRCOL.right : DIRCOL.left) + frame;
+        g.globalAlpha = 0.9;
+        g.drawImage(IMG.monsters, col * 32, b.boss.mrow * 32, 32, 32, bx, by, sz, sz);
+        g.globalAlpha = 1;
+        // Boss name plate
+        g.save();
+        g.font = 'bold 9px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'top';
+        g.shadowColor = bc; g.shadowBlur = 10;
+        g.strokeStyle = '#000'; g.lineWidth = 3;
+        g.strokeText(b.boss.name, bx + sz/2, by + sz + 2);
+        g.fillStyle = bc;
+        g.fillText(b.boss.name, bx + sz/2, by + sz + 2);
+        g.restore();
+      }
+    }
+
+    // Hero (centered, large, with glow)
     if (IMG.hero) {
-      const heroScale = 4;
+      const heroScale = 4.5;
       const heroX = (W / 2 - 16 * heroScale) | 0;
-      const heroY = (H * 0.88 - 32 * heroScale) | 0;
+      const heroY = (H * 0.86 - 32 * heroScale) | 0;
+      const dc2 = DIRCOL.down * 32;
       const frame = Math.floor(menuScene.scroll * 0.1) % 2;
       const menuCharRow = CHARACTERS[selectedChar].row;
-      g.drawImage(IMG.hero, dc + frame * 32, menuCharRow * 32, 32, 32,
+      // Hero glow
+      g.save();
+      g.shadowColor = '#ffa040'; g.shadowBlur = 30 + Math.sin(t * 3) * 10;
+      const hgrd = g.createRadialGradient(heroX + 16*heroScale, heroY + 20*heroScale, 5, heroX + 16*heroScale, heroY + 20*heroScale, 50);
+      hgrd.addColorStop(0, 'rgba(255,180,60,0.3)');
+      hgrd.addColorStop(1, 'rgba(255,100,20,0)');
+      g.fillStyle = hgrd;
+      g.beginPath(); g.arc(heroX + 16*heroScale, heroY + 20*heroScale, 50, 0, Math.PI * 2); g.fill();
+      g.restore();
+      g.drawImage(IMG.hero, dc2 + frame * 32, menuCharRow * 32, 32, 32,
         heroX, heroY, 32 * heroScale, 32 * heroScale);
     }
 
+    // Embers (more, brighter)
     for (const e of menuScene.embers) {
-      e.x += e.vx; e.y += e.vy; e.life -= dt * 0.15;
+      e.x += e.vx; e.y += e.vy; e.life -= dt * 0.12;
       if (e.life <= 0 || e.y < -10) {
         e.x = Math.random() * W; e.y = H + 10;
         e.life = 0.7 + Math.random() * 0.3;
       }
-      const alpha = e.life * 0.8;
+      const alpha = e.life * 0.85;
       g.globalAlpha = alpha;
       g.fillStyle = `hsl(${e.hue}, 100%, ${55 + e.life * 20}%)`;
       g.beginPath(); g.arc(e.x, e.y, e.r, 0, Math.PI * 2); g.fill();
-      g.globalAlpha = alpha * 0.4;
+      g.globalAlpha = alpha * 0.5;
+      g.shadowColor = `hsl(${e.hue}, 100%, 70%)`; g.shadowBlur = 8;
       g.fillStyle = `hsl(${e.hue}, 100%, 80%)`;
       g.beginPath(); g.arc(e.x, e.y, e.r * 2.5, 0, Math.PI * 2); g.fill();
+      g.shadowBlur = 0;
     }
     g.globalAlpha = 1;
 
-    g.fillStyle = 'rgba(5,6,10,0.55)';
+    // Magic sparks — tiny colored particles that drift and twinkle
+    for (const s of menuScene.sparks) {
+      s.x += s.vx; s.y += s.vy; s.life -= dt * 0.08;
+      if (s.life <= 0 || s.x < -10 || s.x > W+10 || s.y < -10 || s.y > H+10) {
+        s.x = Math.random() * W; s.y = Math.random() * H;
+        s.life = 0.6 + Math.random() * 0.4;
+        s.vx = (Math.random() - 0.5) * 2; s.vy = (Math.random() - 0.5) * 2;
+      }
+      const twinkle = Math.sin(t * 8 + s.x * 0.1) * 0.5 + 0.5;
+      g.globalAlpha = s.life * twinkle * 0.7;
+      g.shadowColor = s.color; g.shadowBlur = 6;
+      g.fillStyle = s.color;
+      g.beginPath(); g.arc(s.x, s.y, s.r, 0, Math.PI * 2); g.fill();
+    }
+    g.shadowBlur = 0; g.globalAlpha = 1;
+
+    // Ambient glow orbs — soft colored lights drifting slowly
+    for (const o of menuScene.orbs) {
+      o.x += o.vx; o.y += o.vy; o.phase += dt * 0.5;
+      if (o.x < -50) o.x = W + 50;
+      if (o.x > W + 50) o.x = -50;
+      if (o.y < -50) o.y = H * 0.3;
+      if (o.y > H * 0.8) o.y = H * 0.2;
+      const oa = (0.06 + 0.04 * Math.sin(o.phase)) * 0.7;
+      g.globalAlpha = oa;
+      const ogrd = g.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
+      ogrd.addColorStop(0, `hsla(${o.hue}, 80%, 60%, 0.5)`);
+      ogrd.addColorStop(1, `hsla(${o.hue}, 80%, 40%, 0)`);
+      g.fillStyle = ogrd;
+      g.beginPath(); g.arc(o.x, o.y, o.r, 0, Math.PI * 2); g.fill();
+    }
+    g.globalAlpha = 1;
+
+    // Floating rune symbols
+    for (const r of menuScene.runes) {
+      r.phase += dt * r.speed;
+      const ry = r.y + Math.sin(r.phase) * 15;
+      const ra = 0.08 + 0.06 * Math.sin(r.phase * 1.5);
+      g.globalAlpha = ra;
+      g.font = `${r.r}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(r.symbol, r.x, ry);
+    }
+    g.globalAlpha = 1;
+
+    // Dark atmospheric overlay with dramatic vignette
+    g.fillStyle = 'rgba(5,6,10,0.5)';
     g.fillRect(0, 0, W, H);
 
-    const edgeL = g.createLinearGradient(0, 0, W * 0.2, 0);
-    edgeL.addColorStop(0, 'rgba(5,6,10,0.7)'); edgeL.addColorStop(1, 'rgba(5,6,10,0)');
-    g.fillStyle = edgeL; g.fillRect(0, 0, W * 0.2, H);
-    const edgeR = g.createLinearGradient(W * 0.8, 0, W, 0);
-    edgeR.addColorStop(0, 'rgba(5,6,10,0)'); edgeR.addColorStop(1, 'rgba(5,6,10,0.7)');
-    g.fillStyle = edgeR; g.fillRect(W * 0.8, 0, W * 0.2, H);
+    // Color-tinted atmosphere (shifts between dark red and purple)
+    const atmoHue = 300 + Math.sin(t * 0.3) * 40;
+    g.fillStyle = `hsla(${atmoHue}, 60%, 10%, 0.2)`;
+    g.fillRect(0, 0, W, H);
 
-    const topGrad = g.createLinearGradient(0, 0, 0, H * 0.18);
-    topGrad.addColorStop(0, 'rgba(5,6,10,0.85)');
+    // Lightning flash
+    if (menuScene.lightning > 0) {
+      menuScene.lightning -= dt * 3;
+      g.fillStyle = `rgba(200,220,255,${menuScene.lightning * 0.08})`;
+      g.fillRect(0, 0, W, H);
+    }
+    if (Math.random() < dt * 0.15) menuScene.lightning = 1;
+
+    // Dramatic vignette
+    const edgeL = g.createLinearGradient(0, 0, W * 0.25, 0);
+    edgeL.addColorStop(0, 'rgba(5,6,10,0.85)'); edgeL.addColorStop(1, 'rgba(5,6,10,0)');
+    g.fillStyle = edgeL; g.fillRect(0, 0, W * 0.25, H);
+    const edgeR = g.createLinearGradient(W * 0.75, 0, W, 0);
+    edgeR.addColorStop(0, 'rgba(5,6,10,0)'); edgeR.addColorStop(1, 'rgba(5,6,10,0.85)');
+    g.fillStyle = edgeR; g.fillRect(W * 0.75, 0, W * 0.25, H);
+
+    const topGrad = g.createLinearGradient(0, 0, 0, H * 0.22);
+    topGrad.addColorStop(0, 'rgba(5,6,10,0.9)');
     topGrad.addColorStop(1, 'rgba(5,6,10,0)');
-    g.fillStyle = topGrad; g.fillRect(0, 0, W, H * 0.18);
-    const botGrad = g.createLinearGradient(0, H * 0.82, 0, H);
+    g.fillStyle = topGrad; g.fillRect(0, 0, W, H * 0.22);
+    const botGrad = g.createLinearGradient(0, H * 0.78, 0, H);
     botGrad.addColorStop(0, 'rgba(5,6,10,0)');
-    botGrad.addColorStop(1, 'rgba(5,6,10,0.85)');
-    g.fillStyle = botGrad; g.fillRect(0, H * 0.82, W, H * 0.18);
+    botGrad.addColorStop(1, 'rgba(5,6,10,0.9)');
+    g.fillStyle = botGrad; g.fillRect(0, H * 0.78, W, H * 0.22);
   }
 
   function drawMenuPreview() {}
