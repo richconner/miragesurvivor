@@ -36,7 +36,7 @@
     0%, 100% { text-shadow: 0 0 30px rgba(255,60,40,0.7), 0 0 60px rgba(255,40,20,0.35), 0 2px 0 #8a1a18, 0 4px 0 #5c1210; }
     50% { text-shadow: 0 0 50px rgba(255,80,40,0.9), 0 0 100px rgba(255,40,20,0.5), 0 0 140px rgba(201,48,44,0.25), 0 2px 0 #8a1a18, 0 4px 0 #5c1210; }
   }
-  .subtitle { color: #b0b8d0; margin-bottom: 24px; font-size: clamp(13px, 3.5vw, 18px);
+  .subtitle { color: #b0b8d0; margin-bottom: 14px; font-size: clamp(13px, 3.5vw, 18px);
     letter-spacing: 2px; text-shadow: 0 0 12px rgba(0,0,0,0.8); }
 
   .btn {
@@ -56,23 +56,24 @@
   }
   .btn.secondary { background: linear-gradient(180deg, #37507a, #223353); box-shadow: 0 6px 0 #16223a; }
 
-  .help { color: #8a93a8; font-size: 13px; margin-top: 22px; line-height: 1.7; max-width: 460px;
+  .help { color: #8a93a8; font-size: 12px; margin-top: 10px; line-height: 1.5; max-width: 460px;
     text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7); }
-  .credit { color: #8a93a8; font-size: 12px; margin-top: 16px;
+  .credit { color: #8a93a8; font-size: 11px; margin-top: 8px;
     text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
   .credit a { color: #c9302c; text-decoration: none; font-weight: 700; }
   .credit a:hover { text-decoration: underline; }
-  .version { color: #5a6278; font-size: 10px; margin-top: 8px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); letter-spacing: 0.5px; }
+  .version { color: #5a6278; font-size: 10px; margin-top: 4px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); letter-spacing: 0.5px; }
 
   #preview { display: none; }
   #menu .divider { width: min(320px, 60vw); height: 2px; margin: 0 auto 14px;
     background: linear-gradient(90deg, transparent, #c9302c, #f0c040, #c9302c, transparent);
     box-shadow: 0 0 12px rgba(201,48,44,0.5); }
   #menuScene { position: fixed; inset: 0; z-index: 9; image-rendering: pixelated; }
-  #menu.overlay { background: none; backdrop-filter: none; z-index: 10; }
-  #menu .menu-content { background: radial-gradient(ellipse at center, rgba(5,6,10,0.82) 0%, rgba(5,6,10,0.5) 70%, transparent 100%);
-    padding: 30px 50px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; }
-  .hiscore { color: #f0c040; font-weight: 700; margin-top: 10px; font-size: 15px; letter-spacing: 1px; }
+  #menu.overlay { background: none; backdrop-filter: none; z-index: 10; justify-content: flex-start; }
+  #menu .menu-content { background: linear-gradient(180deg, rgba(5,6,10,0.82) 0%, rgba(5,6,10,0.7) 70%, transparent 100%);
+    padding: 20px 50px 40px; border-radius: 0 0 20px 20px; display: flex; flex-direction: column; align-items: center;
+    width: 100%; max-width: none; }
+  .hiscore { color: #f0c040; font-weight: 700; margin-top: 6px; font-size: 15px; letter-spacing: 1px; }
   .topbtns { position: fixed; top: 8px; right: 14px; z-index: 13; display: flex; gap: 8px; }
   .iconbtn { background: rgba(20,26,43,0.8); border: 1px solid #2a3350; color: #cdd4e6;
     width: 42px; height: 42px; border-radius: 10px; font-size: 20px; cursor: pointer; }
@@ -151,13 +152,13 @@
   .final b { color: #f0c040; }
 
   /* Shop */
-  #shop { z-index: 15; }
+  #shop { z-index: 15; overflow-y: auto; }
   #shop h2 { color: #f0c040; text-shadow: 0 0 14px rgba(240,192,64,0.5); margin-bottom: 4px; font-size: clamp(20px, 5vw, 30px); letter-spacing: 2px; }
   .shop-gold { color: #f0c040; font-size: 18px; font-weight: 700; margin-bottom: 14px; }
-  .shop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; max-width: 660px; width: 100%; }
+  .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 720px; width: 100%; }
   .shop-item {
     background: #141a2b; border: 2px solid #2a3350; border-radius: 10px;
-    padding: 10px 8px; text-align: center; cursor: pointer;
+    padding: 6px 4px; text-align: center; cursor: pointer;
     transition: transform .08s, border-color .12s, background .12s;
   }
   .shop-item:hover { transform: translateY(-2px); border-color: #f0c040; background: #1b2338; }
@@ -221,8 +222,8 @@
     .skip-btn { width: 160px; padding: 10px 12px; font-size: 13px; }
     .ban-btn { font-size: 10px; padding: 4px 10px; }
     #levelup h2 { margin-bottom: 12px; }
-    .shop-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
-    .shop-item { padding: 8px 6px; }
+    .shop-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .shop-item { padding: 5px 3px; }
     .shop-item .shop-ic { font-size: 20px; }
     .shop-item .shop-nm { font-size: 11px; }
     .shop-item .shop-desc { font-size: 9px; }
@@ -246,7 +247,7 @@
     .cards { gap: 8px; }
     .skip-btn { width: 140px; }
     .char-card { width: 78px; padding: 6px 4px 6px; }
-    .shop-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+    .shop-grid { grid-template-columns: repeat(3, 1fr); }
     #hudrow { padding-right: 90px; }
     .inv-slot { width: 26px; height: 26px; font-size: 14px; }
   }
@@ -298,17 +299,13 @@
     <h1>MIRAGE SURVIVORS</h1>
     <div class="divider"></div>
     <div class="subtitle">The realm of Mirage is overrun. Stand your ground, hero.</div>
-    <button class="btn" id="playBtn">SELECT HERO</button>
-    <button class="btn secondary" id="shopBtn">BUY UPGRADES</button>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <button class="btn" id="playBtn">SELECT HERO</button>
+      <button class="btn secondary" id="shopBtn">BUY UPGRADES</button>
+    </div>
     <div class="hiscore" id="menuHi"></div>
     <div class="shop-gold" id="menuGold" style="margin-top:4px;font-size:15px;"></div>
-    <div class="help">
-      <b>Desktop:</b> WASD / Arrow keys to move &nbsp;·&nbsp; your weapons auto-attack<br>
-      <b>Mobile:</b> touch &amp; drag anywhere to move<br>
-      Grab the gold monsters drop to level up and pick new powers. Don't get overwhelmed!
-    </div>
-    <div class="credit">Art from <a href="https://www.mirageonlineclassic.com" target="_blank" rel="noopener">Mirage Online Classic</a></div>
-    <div class="version">v0.9.0</div>
+    <div class="credit" style="margin-top:10px;">Move to survive · Weapons auto-attack · Art from <a href="https://www.mirageonlineclassic.com" target="_blank" rel="noopener">Mirage Online Classic</a> · v0.9.0</div>
   </div>
 </div>
 
@@ -1133,6 +1130,26 @@
   document.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
+  // Boss focus targeting — click/tap a boss to focus weapons on it
+  function handleFocusClick(cx, cy) {
+    if (state !== 'playing') return;
+    const wx = cx + camX, wy = cy + camY;
+    let best = null, bestD = 80 * 80;
+    for (const e of enemies) {
+      if (!e.boss) continue;
+      const d = dist2(wx, wy, e.x, e.y);
+      if (d < bestD) { bestD = d; best = e; }
+    }
+    if (best) { focusTarget = (focusTarget === best) ? null : best; }
+    else { focusTarget = null; }
+  }
+  canvas.addEventListener('click', e => handleFocusClick(e.offsetX * DPR, e.offsetY * DPR));
+  canvas.addEventListener('touchend', e => {
+    if (touchId !== null) return;
+    const t = e.changedTouches[0];
+    if (t) handleFocusClick(t.clientX * DPR, t.clientY * DPR);
+  });
+
   // ---- Game state -----------------------------------------------------
   let state = 'menu'; // menu | playing | levelup | dead | paused
   let player, enemies, gems, projectiles, particles, orbs, damageTexts, enemyShots, decals;
@@ -1143,6 +1160,8 @@
   let dmgVignette = 0, lvlFlash = 0, footstepTimer = 0;
   let streakKills = 0, streakActive = false, streakTimer = 0, streakThreshold = 100, rampageCount = 0;
   let dyingEnemies = [];
+  let focusTarget = null;
+  let rerollsLeft = 0, freeRevives = 0;
   let totalDmgDealt = 0, dpsWindow = [], heartbeatTimer = 0;
   let weaponKills = {};
   let poisonClouds = [], iceWalls = [], secondWindUses = 0, shieldBashVfx = [], bossTrails = [];
@@ -1164,9 +1183,15 @@
     { id:'darkknight', name:'Dark Knight', row:2, weapon:'orbit',  weaponName:'Spirit Orbs',     ic:'🔮', cost:3750 },
     { id:'icemage',   name:'Ice Mage',    row:3, weapon:'bolt',    weaponName:'Chain Lightning', ic:'⚡', cost:5000 },
     { id:'monk',      name:'Monk',        row:4, weapon:'slam',    weaponName:'Ground Slam',     ic:'💥', cost:7500 },
-    { id:'ranger',    name:'Ranger',      row:5, weapon:'pizza',   weaponName:'Returning Axe',   ic:'🪓', cost:10000 }
+    { id:'ranger',    name:'Ranger',      row:5, weapon:'pizza',   weaponName:'Returning Axe',   ic:'🪓', cost:10000 },
+    { id:'warlock',   name:'Warlock',     row:6,  weapon:'chains',  weaponName:'Spectral Chains', ic:'⛓️', cost:12000 },
+    { id:'bomber',    name:'Bombardier',  row:7,  weapon:'meteor',  weaponName:'Meteor Strike',   ic:'☄️', cost:15000 },
+    { id:'assassin',  name:'Assassin',    row:8,  weapon:'clone',   weaponName:'Shadow Clone',    ic:'👤', cost:18000 },
+    { id:'paladin',   name:'Paladin',     row:9,  weapon:'cross',   weaponName:'Holy Cross',      ic:'✝️', cost:20000 },
+    { id:'alchemist', name:'Alchemist',   row:10, weapon:'poison',  weaponName:'Poison Cloud',    ic:'☠️', cost:22000 },
+    { id:'barbarian', name:'Barbarian',   row:11, weapon:'shield',  weaponName:'Shield Bash',     ic:'🛡️', cost:25000 }
   ];
-  let selectedChar = 0;
+  let selectedChar = parseInt(CG.getItem('mirage_lastHero') || '0', 10) || 0;
   let heroRow = 0;
   const CHARS_KEY = 'mirage_chars';
   let unlockedChars = { knight: true };
@@ -1221,22 +1246,31 @@
   let runGold = 0;
 
   const SHOP_UPGRADES = [
-    { id:'s_maxhp',    name:'Max Health',    ic:'❤️', max:10, cost:i=>20+i*25,  desc:'+10 max HP per level' },
-    { id:'s_damage',   name:'Attack Power',  ic:'⚔️', max:10, cost:i=>25+i*30,  desc:'+5% weapon damage' },
-    { id:'s_speed',    name:'Move Speed',    ic:'👢', max:8,  cost:i=>20+i*20,  desc:'+3% movement speed' },
-    { id:'s_armor',    name:'Toughness',     ic:'🛡️', max:8,  cost:i=>30+i*25,  desc:'-1 damage from all hits' },
-    { id:'s_magnet',   name:'Magnetism',     ic:'🧲', max:6,  cost:i=>15+i*20,  desc:'+10% pickup radius' },
-    { id:'s_cooldown', name:'Haste',         ic:'⏳', max:8,  cost:i=>30+i*30,  desc:'-2% weapon cooldown' },
-    { id:'s_crit',     name:'Precision',     ic:'🎯', max:6,  cost:i=>35+i*35,  desc:'+2% crit chance' },
-    { id:'s_xp',       name:'Wisdom',        ic:'📗', max:6,  cost:i=>25+i*25,  desc:'+5% XP gain' },
-    { id:'s_regen',    name:'Recovery',       ic:'💚', max:3,  cost:i=>30+i*30,  desc:'+0.08 HP/s regen' },
-    { id:'s_greed',    name:'Greed',         ic:'💰', max:5,  cost:i=>40+i*40,  desc:'+10% gold earned' },
-    { id:'s_area',     name:'Blast Radius',  ic:'🔆', max:6,  cost:i=>30+i*30,  desc:'+5% area of effect' },
-    { id:'s_projspd',  name:'Velocity',      ic:'💫', max:6,  cost:i=>25+i*25,  desc:'+5% projectile speed' },
-    { id:'s_dodge',    name:'Evasion',       ic:'💨', max:3,  cost:i=>40+i*40,  desc:'+1% dodge chance' },
-    { id:'s_knockback',name:'Impact',        ic:'🥊', max:5,  cost:i=>30+i*30,  desc:'+5% knockback force' },
-    { id:'s_luck',     name:'Fortune',       ic:'🍀', max:5,  cost:i=>35+i*35,  desc:'+8% better drop rates' },
-    { id:'s_startlvl', name:'Head Start',    ic:'⭐', max:3,  cost:i=>80+i*80,  desc:'Start each run +1 level' }
+    { id:'s_maxhp',    name:'Max Health',    ic:'❤️', max:10, cost:i=>60+i*75,  desc:'+10 max HP per level' },
+    { id:'s_damage',   name:'Attack Power',  ic:'⚔️', max:10, cost:i=>75+i*90,  desc:'+5% weapon damage' },
+    { id:'s_speed',    name:'Move Speed',    ic:'👢', max:8,  cost:i=>60+i*60,  desc:'+3% movement speed' },
+    { id:'s_armor',    name:'Toughness',     ic:'🛡️', max:8,  cost:i=>90+i*75,  desc:'-1 damage from all hits' },
+    { id:'s_magnet',   name:'Magnetism',     ic:'🧲', max:6,  cost:i=>45+i*60,  desc:'+10% pickup radius' },
+    { id:'s_cooldown', name:'Haste',         ic:'⏳', max:8,  cost:i=>90+i*90,  desc:'-2% weapon cooldown' },
+    { id:'s_crit',     name:'Precision',     ic:'🎯', max:6,  cost:i=>100+i*100, desc:'+2% crit chance' },
+    { id:'s_xp',       name:'Wisdom',        ic:'📗', max:6,  cost:i=>75+i*75,  desc:'+5% XP gain' },
+    { id:'s_regen',    name:'Recovery',       ic:'💚', max:3,  cost:i=>90+i*90,  desc:'+0.08 HP/s regen' },
+    { id:'s_greed',    name:'Greed',         ic:'💰', max:5,  cost:i=>120+i*120, desc:'+10% gold earned' },
+    { id:'s_area',     name:'Blast Radius',  ic:'🔆', max:6,  cost:i=>90+i*90,  desc:'+5% area of effect' },
+    { id:'s_projspd',  name:'Velocity',      ic:'💫', max:6,  cost:i=>75+i*75,  desc:'+5% projectile speed' },
+    { id:'s_dodge',    name:'Evasion',       ic:'💨', max:3,  cost:i=>120+i*120, desc:'+1% dodge chance' },
+    { id:'s_knockback',name:'Impact',        ic:'🥊', max:5,  cost:i=>90+i*90,  desc:'+5% knockback force' },
+    { id:'s_luck',     name:'Fortune',       ic:'🍀', max:5,  cost:i=>100+i*100, desc:'+8% better drop rates' },
+    { id:'s_startlvl', name:'Head Start',    ic:'⭐', max:3,  cost:i=>250+i*250, desc:'Start each run +1 level' },
+    { id:'s_revive',   name:'Resurrection', ic:'🕊️', max:1,  cost:i=>500,       desc:'Start with 1 free revive (full HP)' },
+    { id:'s_choices',  name:'Extra Choice', ic:'🃏', max:2,  cost:i=>300+i*350, desc:'+1 card shown at level-up' },
+    { id:'s_reroll',   name:'Reroll',       ic:'🎲', max:3,  cost:i=>200+i*200, desc:'+1 reroll per run at level-up' },
+    { id:'s_bossGold', name:'Bounty Hunter',ic:'💀', max:5,  cost:i=>150+i*150, desc:'+20% bonus gold from bosses' },
+    { id:'s_startArm', name:'Iron Skin',    ic:'🔰', max:3,  cost:i=>120+i*120, desc:'Start with -1 damage taken per level' },
+    { id:'s_bossRes',  name:'Boss Resist', ic:'🏰', max:5,  cost:i=>100+i*100, desc:'-8% damage from boss attacks' },
+    { id:'s_goldRush', name:'Gold Rush',   ic:'💎', max:4,  cost:i=>130+i*130, desc:'+10% chance for double gold pickup' },
+    { id:'s_tenacity', name:'Tenacity',    ic:'🦷', max:4,  cost:i=>100+i*100, desc:'-10% knockback received from hits' },
+    { id:'s_surplus',  name:'Surplus',     ic:'🏦', max:5,  cost:i=>80+i*80,   desc:'+15 bonus gold earned per run' }
   ];
 
   let shopLevels = {};
@@ -1308,6 +1342,15 @@
     player.metaDodge = (s.s_dodge || 0) * 0.01;
     player.metaKb = 1 + (s.s_knockback || 0) * 0.05;
     player.metaLuck = 1 + (s.s_luck || 0) * 0.08;
+    player.metaRevive = s.s_revive || 0;
+    player.metaChoices = 3 + (s.s_choices || 0);
+    player.metaRerolls = s.s_reroll || 0;
+    player.metaBossGold = 1 + (s.s_bossGold || 0) * 0.20;
+    player.metaStartArmor = s.s_startArm || 0;
+    player.metaBossRes = 1 - (s.s_bossRes || 0) * 0.08;
+    player.metaGoldRush = (s.s_goldRush || 0) * 0.10;
+    player.metaTenacity = 1 - (s.s_tenacity || 0) * 0.10;
+    player.metaSurplus = (s.s_surplus || 0) * 15;
   }
 
   function makeUpgradePool() {
@@ -1339,7 +1382,7 @@
                  desc:'Random lightning bolts strike nearby enemies.' },
       icewall: { kind:'weapon', name:'Ice Wall', ic:'🧊', lvl:0, max:6,
                  desc:'Drops a barrier behind you that blocks & slows enemies.' },
-      boomerang:{ kind:'weapon', name:'Boomerang Blade', ic:'🪃', lvl:0, max:6,
+      boomerang:{ kind:'weapon', name:'Boomerang Blade', ic:'🌀', lvl:0, max:6,
                  desc:'Throws a blade that curves out and returns, hitting twice.' },
       chains:  { kind:'weapon', name:'Spectral Chains', ic:'⛓️', lvl:0, max:6,
                  desc:'Tethers to nearby enemies, dealing damage over time.' },
@@ -1424,12 +1467,16 @@
     momentumStacks = 0; adrenalineTimer = 0; clones = []; bannedUpgrades = {}; meteorImpacts = [];
     bossLightning = []; bossBeams = []; bossFirePillars = []; bossQuakes = [];
     runGold = 0;
+    focusTarget = null;
     bossIdx = Math.floor(Math.random() * BOSSES.length);
     // start with selected character's weapon
     const ch = CHARACTERS[selectedChar];
+    CG.setItem('mirage_lastHero', String(selectedChar));
     heroRow = ch.row;
     up[ch.weapon].lvl = 1;
     applyMetaUpgrades();
+    rerollsLeft = player.metaRerolls;
+    freeRevives = player.metaRevive;
     recalcPassives();
     const headStart = shopLevels.s_startlvl || 0;
     for (let i = 0; i < headStart; i++) { level++; queueLevelUp(); }
@@ -1478,7 +1525,8 @@
       !(up[k].kind === 'passive' && ownedPassives >= MAX_PASSIVES));
     let pool = [...owned, ...fresh];
     for (let i = pool.length - 1; i > 0; i--) { const j = (Math.random()*(i+1))|0; [pool[i],pool[j]]=[pool[j],pool[i]]; }
-    const picks = pool.slice(0, 3);
+    const numChoices = player ? (player.metaChoices || 3) : 3;
+    const picks = pool.slice(0, numChoices);
     if (picks.length === 0) { applyChoice('_heal'); return; }
     const cardsEl = document.getElementById('cards');
     cardsEl.innerHTML = '';
@@ -1498,7 +1546,7 @@
       if (isNew) {
         const banBtn = document.createElement('div');
         banBtn.className = 'ban-btn';
-        banBtn.textContent = '🚫 BAN';
+        banBtn.textContent = '🚫 BAN (+30 HP)';
         banBtn.onclick = () => { bannedUpgrades[k] = true; applyChoice('_heal'); };
         wrapper.appendChild(banBtn);
       }
@@ -1506,9 +1554,17 @@
     });
     const skipBtn = document.createElement('div');
     skipBtn.className = 'skip-btn';
-    skipBtn.textContent = 'Skip (+20 HP)';
+    skipBtn.textContent = 'Skip (+30 HP)';
     skipBtn.onclick = () => applyChoice('_heal');
     cardsEl.appendChild(skipBtn);
+    if (rerollsLeft > 0) {
+      const rerollBtn = document.createElement('div');
+      rerollBtn.className = 'skip-btn';
+      rerollBtn.style.cssText = 'color:#7ab6ff;border-color:#7ab6ff;margin-top:6px;';
+      rerollBtn.textContent = '🎲 Reroll (' + rerollsLeft + ' left)';
+      rerollBtn.onclick = () => { rerollsLeft--; hide('levelup'); openLevelUp(); levelQueue++; };
+      cardsEl.appendChild(rerollBtn);
+    }
     show('levelup');
   }
 
@@ -1558,7 +1614,7 @@
     player.lifesteal = up.lifesteal.lvl * 0.01;
     player.dodgeChance = up.dodge.lvl * 0.02 + (player.metaDodge || 0);
     player.xpMul = (1 + up.xpboost.lvl * 0.15) * mxp;
-    player.armorFlat = up.armor.lvl * 3 + (player.metaArmor || 0);
+    player.armorFlat = up.armor.lvl * 3 + (player.metaArmor || 0) + (player.metaStartArmor || 0);
     player.areaMul = (1 + up.area.lvl * 0.15) * (player.metaArea || 1);
     player.projSpd = (1 + up.projspd.lvl * 0.15) * (player.metaProjSpd || 1);
     player.luckMul = (1 + up.luck.lvl * 0.5) * (player.metaLuck || 1);
@@ -1684,6 +1740,13 @@
 
   // ---- Combat helpers -------------------------------------------------
   // canCrit: discrete hits can crit; continuous auras (dps) don't, to avoid spam.
+  function checkPlayerDeath() {
+    if (player.hp > 0) return false;
+    if (freeRevives > 0) { freeRevives--; player.hp = player.maxHp; player.iframe = 2.5; milestonePopups.push({ text:'RESURRECTED!', t:3, y:0 }); Audio2.revive(); juice(18, 0.1); return false; }
+    if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); return false; }
+    gameOver(); return true;
+  }
+
   function damageEnemy(e, dmg, kx, ky, canCrit) {
     let crit = false;
     if (streakActive) dmg *= 2;
@@ -1715,6 +1778,7 @@
   }
   function killEnemy(e) {
     e.dead = true; kills++;
+    if (e === focusTarget) focusTarget = null;
     dyingEnemies.push({ x:e.x, y:e.y, mrow:e.mrow, faceDir:e.faceDir, r:e.r, t:0.3, flying:e.flying, bob:e.bob||0, hue:e.hue });
     if (nextMilestoneIdx < KILL_MILESTONES.length && kills >= KILL_MILESTONES[nextMilestoneIdx]) {
       milestonePopups.push({ text: kills + ' KILLS!', t: 2.5, y: 0 });
@@ -1735,6 +1799,7 @@
     if (e.boss || Math.random() < 0.5) {
       let gv = e.xp;
       if (e.boss && up.bounty && up.bounty.lvl > 0) gv *= 1 + up.bounty.lvl * 0.5;
+      if (e.boss && player.metaBossGold) gv = Math.ceil(gv * player.metaBossGold);
       let gx = e.x + rand(-8,8), gy = e.y + rand(-8,8);
       if (circleBlocked(gx, gy, 4)) { gx = e.x; gy = e.y; }
       if (circleBlocked(gx, gy, 4)) { gx += 32; if (circleBlocked(gx, gy, 4)) { gx -= 64; if (circleBlocked(gx, gy, 4)) { gx += 32; gy += 32; }}}
@@ -1756,6 +1821,7 @@
   }
 
   function nearestEnemy(x, y, maxD) {
+    if (focusTarget && !focusTarget.dead) return focusTarget;
     let best = null, bd = maxD ? maxD*maxD : Infinity;
     for (const e of enemies) { const d = dist2(x,y,e.x,e.y); if (d < bd) { bd = d; best = e; } }
     return best;
@@ -2147,10 +2213,11 @@
     // Spawning
     spawnTimer -= dt;
     const maxEnemies = 200;
-    const spawnRate = clamp(0.9 - difficulty*0.05, 0.15, 0.9);
+    const earlyBoost = gameTime < 30 ? 0.35 : 0;
+    const spawnRate = clamp(0.9 - difficulty*0.05 - earlyBoost, 0.15, 0.9);
     if (spawnTimer <= 0 && enemies.length < maxEnemies) {
       spawnTimer = spawnRate;
-      const batch = Math.min(1 + Math.floor(difficulty*0.4), 6);
+      const batch = Math.min(1 + Math.floor(difficulty*0.4) + (gameTime < 30 ? 1 : 0), 6);
       for (let i=0;i<batch;i++) { if (enemies.length < maxEnemies) spawnEnemy(false); }
     }
     // Boss every 60s
@@ -2384,10 +2451,10 @@
               }
               if (dd < swr * swr) {
                 if (player.iframe <= 0) {
-                  let sdmg = Math.max(1, bt.swDmg * (1 + difficulty * 0.08) - player.armorFlat);
+                  let sdmg = Math.max(1, (bt.swDmg * (1 + difficulty * 0.08) - player.armorFlat) * (player.metaBossRes||1));
                   player.hp -= sdmg; player.iframe = 0.6; player.flash = 0.15;
                   dmgVignette = 0.45; Audio2.hurt(); juice(14, 0.08);
-                  if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+                  if (player.hp <= 0 && checkPlayerDeath()) return;
                 }
               }
             }
@@ -2400,8 +2467,9 @@
           const vdx = e.x - player.x, vdy = e.y - player.y;
           const vd = Math.sqrt(vdx*vdx + vdy*vdy);
           if (vd > 30) {
-            player.x += (vdx / vd) * bt.vortexPull * dt;
-            player.y += (vdy / vd) * bt.vortexPull * dt;
+            const tenMul = player.metaTenacity || 1;
+            player.x += (vdx / vd) * bt.vortexPull * dt * tenMul;
+            player.y += (vdy / vd) * bt.vortexPull * dt * tenMul;
           }
         }
         // Leap animation
@@ -2416,10 +2484,10 @@
             const lr = bt.leapRadius;
             if (dist2(e.x, e.y, player.x, player.y) < lr * lr) {
               if (player.iframe <= 0) {
-                let ldmg = Math.max(1, bt.leapDmg * (1 + difficulty * 0.08) - player.armorFlat);
+                let ldmg = Math.max(1, (bt.leapDmg * (1 + difficulty * 0.08) - player.armorFlat) * (player.metaBossRes||1));
                 player.hp -= ldmg; player.iframe = 0.6; player.flash = 0.15;
                 dmgVignette = 0.45; Audio2.hurt(); juice(14, 0.08);
-                if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+                if (player.hp <= 0 && checkPlayerDeath()) return;
               }
             }
             for (let i = 0; i < 20; i++) {
@@ -2452,10 +2520,10 @@
           if (bd < e.blizzardR) {
             player.blizzardSlow = 0.15;
             if (player.iframe <= 0 && Math.random() < dt * 3) {
-              let bdmg = Math.max(1, e.bossType.blizzardDmg * (1 + difficulty * 0.08) - player.armorFlat);
+              let bdmg = Math.max(1, (e.bossType.blizzardDmg * (1 + difficulty * 0.08) - player.armorFlat) * (player.metaBossRes||1));
               player.hp -= bdmg; player.iframe = 0.3; player.flash = 0.1;
               dmgVignette = 0.25; Audio2.hurt();
-              if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+              if (player.hp <= 0 && checkPlayerDeath()) return;
             }
           }
         }
@@ -2465,7 +2533,7 @@
           e.drainTarget = { x:player.x, y:player.y };
           const dd = Math.hypot(player.x - e.x, player.y - e.y);
           if (dd < 300 && player.iframe <= 0 && Math.random() < dt * 4) {
-            let ddmg = Math.max(1, bt.drainDmg * (1 + difficulty * 0.08) - player.armorFlat);
+            let ddmg = Math.max(1, (bt.drainDmg * (1 + difficulty * 0.08) - player.armorFlat) * (player.metaBossRes||1));
             player.hp -= ddmg; player.iframe = 0.2; player.flash = 0.08;
             e.hp = Math.min(e.maxHp, e.hp + e.maxHp * bt.drainHeal);
             dmgVignette = 0.2;
@@ -2489,10 +2557,10 @@
             const dr = bt.diveRadius;
             if (dist2(e.x, e.y, player.x, player.y) < dr * dr) {
               if (player.iframe <= 0) {
-                let ddmg = Math.max(1, bt.diveDmg * (1 + difficulty * 0.08) - player.armorFlat);
+                let ddmg = Math.max(1, (bt.diveDmg * (1 + difficulty * 0.08) - player.armorFlat) * (player.metaBossRes||1));
                 player.hp -= ddmg; player.iframe = 0.6; player.flash = 0.15;
                 dmgVignette = 0.45; Audio2.hurt(); juice(14, 0.08);
-                if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+                if (player.hp <= 0 && checkPlayerDeath()) return;
               }
             }
             for (let i = 0; i < 16; i++) { const pa = TAU*i/16; particles.push({ x:e.x, y:e.y, vx:Math.cos(pa)*160, vy:Math.sin(pa)*160, t:0.3, c:'#f0e040', r:3+Math.random()*2 }); }
@@ -2509,13 +2577,14 @@
             player.iframe = 0.15;
           } else {
             let dmg = Math.max(1, e.dmg * (1 + difficulty * 0.08) - player.armorFlat);
+            if (e.boss && player.metaBossRes) dmg = Math.max(1, dmg * player.metaBossRes);
             player.hp -= dmg;
             player.iframe = 0.6; player.flash = 0.15;
             if (up.adrenaline && up.adrenaline.lvl > 0) adrenalineTimer = 3;
             dmgVignette = 0.45;
             Audio2.hurt(); juice(11, 0.07);
             if (player.thorns > 0) damageEnemy(e, dmg * player.thorns, 0, 0);
-            if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+            if (player.hp <= 0 && checkPlayerDeath()) return;
           }
         }
       }
@@ -2549,7 +2618,7 @@
             if (up.adrenaline && up.adrenaline.lvl > 0) adrenalineTimer = 3;
             dmgVignette = 0.45;
             Audio2.hurt(); juice(9, 0.05);
-            if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+            if (player.hp <= 0 && checkPlayerDeath()) return;
           }
         }
       }
@@ -2624,10 +2693,10 @@
       if (tr.dmg > 0 && tr.tick <= 0 && dist2(tr.x, tr.y, player.x, player.y) < tr.r * tr.r) {
         tr.tick = 0.5;
         if (player.iframe <= 0) {
-          let tdmg = Math.max(1, tr.dmg * (1 + difficulty * 0.08) - player.armorFlat);
+          let tdmg = Math.max(1, (tr.dmg * (1 + difficulty * 0.08) - player.armorFlat) * (player.metaBossRes||1));
           player.hp -= tdmg; player.iframe = 0.3; player.flash = 0.1;
           dmgVignette = 0.3; Audio2.hurt();
-          if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+          if (player.hp <= 0 && checkPlayerDeath()) return;
         }
       }
     }
@@ -2640,10 +2709,10 @@
       if (l.tick <= 0 && dist2(l.x, l.y, player.x, player.y) < l.r * l.r) {
         l.tick = 9;
         if (player.iframe <= 0) {
-          let ldmg = Math.max(1, l.dmg * (1 + difficulty * 0.08) - player.armorFlat);
+          let ldmg = Math.max(1, (l.dmg * (1 + difficulty * 0.08) - player.armorFlat) * (player.metaBossRes||1));
           player.hp -= ldmg; player.iframe = 0.5; player.flash = 0.15;
           dmgVignette = 0.4; Audio2.hurt(); juice(10, 0.05);
-          if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+          if (player.hp <= 0 && checkPlayerDeath()) return;
         }
       }
     }
@@ -2656,10 +2725,10 @@
       if (p.tick <= 0 && dist2(p.x, p.y, player.x, player.y) < p.r * p.r) {
         p.tick = 0.5;
         if (player.iframe <= 0) {
-          let pdmg = Math.max(1, p.dmg * (1 + difficulty * 0.08) - player.armorFlat);
+          let pdmg = Math.max(1, (p.dmg * (1 + difficulty * 0.08) - player.armorFlat) * (player.metaBossRes||1));
           player.hp -= pdmg; player.iframe = 0.3; player.flash = 0.1;
           dmgVignette = 0.3; Audio2.hurt();
-          if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+          if (player.hp <= 0 && checkPlayerDeath()) return;
         }
       }
     }
@@ -2674,10 +2743,10 @@
       if (q.tick <= 0 && Math.abs(pd - q.r) < 40) {
         q.tick = 9;
         if (player.iframe <= 0) {
-          let qdmg = Math.max(1, q.dmg * (1 + difficulty * 0.08) - player.armorFlat);
+          let qdmg = Math.max(1, (q.dmg * (1 + difficulty * 0.08) - player.armorFlat) * (player.metaBossRes||1));
           player.hp -= qdmg; player.iframe = 0.4; player.flash = 0.12;
           dmgVignette = 0.35; Audio2.hurt(); juice(8, 0.04);
-          if (player.hp <= 0) { if (up.secondwind.lvl > secondWindUses) { secondWindUses++; player.hp = Math.floor(player.maxHp * 0.5); player.iframe = 2; milestonePopups.push({ text:'SECOND WIND!', t:2.5, y:0 }); Audio2.revive(); juice(14, 0.08); } else { gameOver(); return; } }
+          if (player.hp <= 0 && checkPlayerDeath()) return;
         }
       }
     }
@@ -2797,7 +2866,7 @@
         g.x += (g.vx||0)*dt; g.y += (g.vy||0)*dt; g.vx*=0.9; g.vy*=0.9;
         g.vacuuming = false;
       }
-      if (d2v < (player.r+g.r)*(player.r+g.r)) { g.got = true; const gv = g.v * player.cashMul; gainXp(gv); runGold += Math.ceil(gv); Audio2.pickup(); }
+      if (d2v < (player.r+g.r)*(player.r+g.r)) { g.got = true; let gv = g.v * player.cashMul; if (player.metaGoldRush && Math.random() < player.metaGoldRush) gv *= 2; gainXp(gv); runGold += Math.ceil(gv); Audio2.pickup(); }
     }
     gems = gems.filter(g => !g.got);
 
@@ -2943,6 +3012,21 @@
       ctx.strokeText(e.bossType.name, sx, barY - 3);
       ctx.fillStyle = bc;
       ctx.fillText(e.bossType.name, sx, barY - 3);
+      if (e === focusTarget) {
+        const fr = size * 0.65, ft = gameTime * 2;
+        ctx.save();
+        ctx.strokeStyle = '#ff4444'; ctx.lineWidth = 2.5; ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 12;
+        ctx.globalAlpha = 0.7 + 0.3 * Math.sin(ft * 3);
+        ctx.translate(sx, sy - size * 0.15);
+        ctx.rotate(ft * 0.5);
+        for (let i = 0; i < 4; i++) {
+          ctx.rotate(Math.PI / 2);
+          ctx.beginPath(); ctx.moveTo(fr * 0.5, 0); ctx.lineTo(fr, 0); ctx.stroke();
+        }
+        ctx.rotate(-ft * 0.5);
+        ctx.beginPath(); ctx.arc(0, 0, fr * 0.35, 0, TAU); ctx.stroke();
+        ctx.restore();
+      }
     }
   }
 
@@ -3898,6 +3982,7 @@
     score = liveScore();
     const isBest = score > hiScore;
     if (isBest) { hiScore = score; CG.setItem(HI_KEY, String(hiScore)); refreshHiScore(); }
+    runGold += player.metaSurplus || 0;
     metaGold += runGold;
     saveShopData();
     refreshGoldDisplay();
@@ -4109,23 +4194,29 @@
       const row = monsterRows[i % monsterRows.length];
       menuScene.monsters.push({
         x: Math.random() * W, y: H * 0.50 + Math.random() * H * 0.38,
-        row, speed: 0.3 + Math.random() * 0.5,
+        row, speed: (0.3 + Math.random() * 0.5) * 2,
         dir: Math.random() < 0.5 ? -1 : 1, scale: 2.0 + Math.random() * 1.2,
         animT: Math.random() * 10
       });
     }
     menuScene.bosses = [];
-    const bossPool = BOSSES.slice();
-    for (let i = 0; i < Math.min(5, bossPool.length); i++) {
-      const b = bossPool[i];
-      menuScene.bosses.push({
-        x: W * 0.1 + (W * 0.8 / 5) * i + Math.random() * 40,
-        y: H * 0.52 + Math.random() * H * 0.12,
-        boss: b, speed: 0.15 + Math.random() * 0.25,
-        dir: Math.random() < 0.5 ? -1 : 1, scale: 4.5,
-        animT: Math.random() * 10, glowPhase: Math.random() * Math.PI * 2
-      });
+    const leftBosses = [], rightBosses = [];
+    for (let i = 0; i < BOSSES.length; i++) {
+      if (i % 2 === 0) leftBosses.push(BOSSES[i]); else rightBosses.push(BOSSES[i]);
     }
+    const placeBosses = (arr, dir) => {
+      const laneH = H * 0.22 / Math.max(arr.length, 1);
+      arr.forEach((b, i) => {
+        menuScene.bosses.push({
+          x: Math.random() * W, y: H * 0.46 + laneH * i + Math.random() * laneH * 0.6,
+          boss: b, speed: (0.2 + Math.random() * 0.3) * 2,
+          dir, scale: (3.5 + Math.random() * 1.5) * 1.25,
+          animT: Math.random() * 10, glowPhase: Math.random() * Math.PI * 2
+        });
+      });
+    };
+    placeBosses(leftBosses, -1);
+    placeBosses(rightBosses, 1);
   }
 
   function drawMenuScene(dt) {
@@ -4181,7 +4272,7 @@
       if (IMG.monsters) {
         const frame = Math.floor(m.animT * 4) % 2;
         const col = (m.dir > 0 ? DIRCOL.right : DIRCOL.left) + frame;
-        g.globalAlpha = 0.35;
+        g.globalAlpha = 0.6;
         g.drawImage(IMG.monsters, col * 32, m.row * 32, 32, 32,
           m.x | 0, m.y | 0, 32 * m.scale, 32 * m.scale);
         g.globalAlpha = 1;
@@ -4262,13 +4353,13 @@
         e.x = Math.random() * W; e.y = H + 10;
         e.life = 0.7 + Math.random() * 0.3;
       }
-      const alpha = e.life * 0.85;
+      const alpha = e.life;
       g.globalAlpha = alpha;
-      g.fillStyle = `hsl(${e.hue}, 100%, ${55 + e.life * 20}%)`;
+      g.fillStyle = `hsl(${e.hue}, 100%, ${60 + e.life * 25}%)`;
       g.beginPath(); g.arc(e.x, e.y, e.r, 0, Math.PI * 2); g.fill();
-      g.globalAlpha = alpha * 0.5;
-      g.shadowColor = `hsl(${e.hue}, 100%, 70%)`; g.shadowBlur = 8;
-      g.fillStyle = `hsl(${e.hue}, 100%, 80%)`;
+      g.globalAlpha = alpha * 0.6;
+      g.shadowColor = `hsl(${e.hue}, 100%, 75%)`; g.shadowBlur = 12;
+      g.fillStyle = `hsl(${e.hue}, 100%, 85%)`;
       g.beginPath(); g.arc(e.x, e.y, e.r * 2.5, 0, Math.PI * 2); g.fill();
       g.shadowBlur = 0;
     }
@@ -4283,7 +4374,7 @@
         s.vx = (Math.random() - 0.5) * 2; s.vy = (Math.random() - 0.5) * 2;
       }
       const twinkle = Math.sin(t * 8 + s.x * 0.1) * 0.5 + 0.5;
-      g.globalAlpha = s.life * twinkle * 0.7;
+      g.globalAlpha = s.life * twinkle * 0.9;
       g.shadowColor = s.color; g.shadowBlur = 6;
       g.fillStyle = s.color;
       g.beginPath(); g.arc(s.x, s.y, s.r, 0, Math.PI * 2); g.fill();
@@ -4297,7 +4388,7 @@
       if (o.x > W + 50) o.x = -50;
       if (o.y < -50) o.y = H * 0.3;
       if (o.y > H * 0.8) o.y = H * 0.2;
-      const oa = (0.06 + 0.04 * Math.sin(o.phase)) * 0.7;
+      const oa = 0.12 + 0.08 * Math.sin(o.phase);
       g.globalAlpha = oa;
       const ogrd = g.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
       ogrd.addColorStop(0, `hsla(${o.hue}, 80%, 60%, 0.5)`);
@@ -4311,46 +4402,46 @@
     for (const r of menuScene.runes) {
       r.phase += dt * r.speed;
       const ry = r.y + Math.sin(r.phase) * 15;
-      const ra = 0.08 + 0.06 * Math.sin(r.phase * 1.5);
+      const ra = 0.15 + 0.1 * Math.sin(r.phase * 1.5);
       g.globalAlpha = ra;
       g.font = `${r.r}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText(r.symbol, r.x, ry);
     }
     g.globalAlpha = 1;
 
-    // Dark atmospheric overlay with dramatic vignette
-    g.fillStyle = 'rgba(5,6,10,0.5)';
+    // Light atmospheric tint — warm and exciting
+    g.fillStyle = 'rgba(10,12,20,0.18)';
     g.fillRect(0, 0, W, H);
 
-    // Color-tinted atmosphere (shifts between dark red and purple)
-    const atmoHue = 300 + Math.sin(t * 0.3) * 40;
-    g.fillStyle = `hsla(${atmoHue}, 60%, 10%, 0.2)`;
+    // Warm color wash (shifts between golden and fiery orange)
+    const atmoHue = 30 + Math.sin(t * 0.4) * 20;
+    g.fillStyle = `hsla(${atmoHue}, 70%, 50%, 0.06)`;
     g.fillRect(0, 0, W, H);
 
-    // Lightning flash
+    // Lightning flash (brighter, more frequent)
     if (menuScene.lightning > 0) {
       menuScene.lightning -= dt * 3;
-      g.fillStyle = `rgba(200,220,255,${menuScene.lightning * 0.08})`;
+      g.fillStyle = `rgba(255,240,220,${menuScene.lightning * 0.12})`;
       g.fillRect(0, 0, W, H);
     }
-    if (Math.random() < dt * 0.15) menuScene.lightning = 1;
+    if (Math.random() < dt * 0.25) menuScene.lightning = 1;
 
-    // Dramatic vignette
-    const edgeL = g.createLinearGradient(0, 0, W * 0.25, 0);
-    edgeL.addColorStop(0, 'rgba(5,6,10,0.85)'); edgeL.addColorStop(1, 'rgba(5,6,10,0)');
-    g.fillStyle = edgeL; g.fillRect(0, 0, W * 0.25, H);
-    const edgeR = g.createLinearGradient(W * 0.75, 0, W, 0);
-    edgeR.addColorStop(0, 'rgba(5,6,10,0)'); edgeR.addColorStop(1, 'rgba(5,6,10,0.85)');
-    g.fillStyle = edgeR; g.fillRect(W * 0.75, 0, W * 0.25, H);
+    // Soft vignette — just enough to frame, not darken
+    const edgeL = g.createLinearGradient(0, 0, W * 0.15, 0);
+    edgeL.addColorStop(0, 'rgba(5,6,10,0.5)'); edgeL.addColorStop(1, 'rgba(5,6,10,0)');
+    g.fillStyle = edgeL; g.fillRect(0, 0, W * 0.15, H);
+    const edgeR = g.createLinearGradient(W * 0.85, 0, W, 0);
+    edgeR.addColorStop(0, 'rgba(5,6,10,0)'); edgeR.addColorStop(1, 'rgba(5,6,10,0.5)');
+    g.fillStyle = edgeR; g.fillRect(W * 0.85, 0, W * 0.15, H);
 
-    const topGrad = g.createLinearGradient(0, 0, 0, H * 0.22);
-    topGrad.addColorStop(0, 'rgba(5,6,10,0.9)');
+    const topGrad = g.createLinearGradient(0, 0, 0, H * 0.12);
+    topGrad.addColorStop(0, 'rgba(5,6,10,0.55)');
     topGrad.addColorStop(1, 'rgba(5,6,10,0)');
-    g.fillStyle = topGrad; g.fillRect(0, 0, W, H * 0.22);
-    const botGrad = g.createLinearGradient(0, H * 0.78, 0, H);
+    g.fillStyle = topGrad; g.fillRect(0, 0, W, H * 0.12);
+    const botGrad = g.createLinearGradient(0, H * 0.88, 0, H);
     botGrad.addColorStop(0, 'rgba(5,6,10,0)');
-    botGrad.addColorStop(1, 'rgba(5,6,10,0.9)');
-    g.fillStyle = botGrad; g.fillRect(0, H * 0.78, W, H * 0.22);
+    botGrad.addColorStop(1, 'rgba(5,6,10,0.55)');
+    g.fillStyle = botGrad; g.fillRect(0, H * 0.88, W, H * 0.12);
   }
 
   function drawMenuPreview() {}
@@ -4368,6 +4459,7 @@
     hiScore = parseInt(CG.getItem(HI_KEY) || '0', 10) || 0;
     loadShopData();
     loadCharsData();
+    if (selectedChar >= CHARACTERS.length || !unlockedChars[CHARACTERS[selectedChar].id]) selectedChar = 0;
     refreshHiScore();
     refreshGoldDisplay();
     Audio2.init(); updateMuteIcon();
