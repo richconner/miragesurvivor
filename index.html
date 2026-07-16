@@ -1178,18 +1178,18 @@
   // Each weapon has a level; passive items modify player stats.
   // ---- Character definitions -------------------------------------------
   const CHARACTERS = [
-    { id:'knight',    name:'Knight',      row:0, weapon:'knife',   weaponName:'Throwing Dagger', ic:'🗡️', cost:0 },
-    { id:'mage',      name:'Mage',        row:1, weapon:'nova',    weaponName:'Frost Nova',      ic:'❄️', cost:2500 },
-    { id:'darkknight', name:'Dark Knight', row:2, weapon:'orbit',  weaponName:'Spirit Orbs',     ic:'🔮', cost:3750 },
-    { id:'icemage',   name:'Ice Mage',    row:3, weapon:'bolt',    weaponName:'Chain Lightning', ic:'⚡', cost:5000 },
-    { id:'monk',      name:'Monk',        row:4, weapon:'slam',    weaponName:'Ground Slam',     ic:'💥', cost:7500 },
-    { id:'ranger',    name:'Ranger',      row:5, weapon:'pizza',   weaponName:'Returning Axe',   ic:'🪓', cost:10000 },
-    { id:'warlock',   name:'Warlock',     row:6,  weapon:'chains',  weaponName:'Spectral Chains', ic:'⛓️', cost:12000 },
+    { id:'knight',    name:'Knight',      row:0,  weapon:'knife',   weaponName:'Throwing Dagger', ic:'🗡️', cost:0 },
+    { id:'ranger',    name:'Ranger',      row:5,  weapon:'pizza',   weaponName:'Returning Axe',   ic:'🪓', cost:2500 },
+    { id:'mage',      name:'Mage',        row:1,  weapon:'nova',    weaponName:'Frost Nova',      ic:'❄️', cost:3750 },
+    { id:'barbarian', name:'Barbarian',   row:11, weapon:'shield',  weaponName:'Shield Bash',     ic:'🛡️', cost:5000 },
+    { id:'assassin',  name:'Assassin',    row:8,  weapon:'clone',   weaponName:'Shadow Clone',    ic:'👤', cost:7500 },
+    { id:'monk',      name:'Monk',        row:4,  weapon:'slam',    weaponName:'Ground Slam',     ic:'💥', cost:10000 },
+    { id:'alchemist', name:'Alchemist',   row:10, weapon:'poison',  weaponName:'Poison Cloud',    ic:'☠️', cost:12000 },
     { id:'bomber',    name:'Bombardier',  row:7,  weapon:'meteor',  weaponName:'Meteor Strike',   ic:'☄️', cost:15000 },
-    { id:'assassin',  name:'Assassin',    row:8,  weapon:'clone',   weaponName:'Shadow Clone',    ic:'👤', cost:18000 },
-    { id:'paladin',   name:'Paladin',     row:9,  weapon:'cross',   weaponName:'Holy Cross',      ic:'✝️', cost:20000 },
-    { id:'alchemist', name:'Alchemist',   row:10, weapon:'poison',  weaponName:'Poison Cloud',    ic:'☠️', cost:22000 },
-    { id:'barbarian', name:'Barbarian',   row:11, weapon:'shield',  weaponName:'Shield Bash',     ic:'🛡️', cost:25000 }
+    { id:'paladin',   name:'Paladin',     row:9,  weapon:'cross',   weaponName:'Holy Cross',      ic:'✝️', cost:18000 },
+    { id:'darkknight', name:'Dark Knight', row:2, weapon:'orbit',   weaponName:'Spirit Orbs',     ic:'🔮', cost:20000 },
+    { id:'icemage',   name:'Stormcaller', row:3,  weapon:'bolt',    weaponName:'Chain Lightning', ic:'⚡', cost:22000 },
+    { id:'warlock',   name:'Warlock',     row:6,  weapon:'chains',  weaponName:'Spectral Chains', ic:'⛓️', cost:25000 }
   ];
   let selectedChar = parseInt(CG.getItem('mirage_lastHero') || '0', 10) || 0;
   let heroRow = 0;
@@ -1218,10 +1218,10 @@
         if (!owned) { g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(0, 0, 64, 64); }
       }
       card.appendChild(cv);
-      const wic = document.createElement('span'); wic.className = 'char-weapon-ic'; wic.textContent = owned ? ch.ic : '🔒';
+      const wic = document.createElement('span'); wic.className = 'char-weapon-ic'; wic.textContent = ch.ic;
       const nm = document.createElement('div'); nm.className = 'char-name'; nm.textContent = ch.name;
       const wp = document.createElement('div'); wp.className = 'char-weapon';
-      wp.textContent = owned ? ch.weaponName : ch.cost + ' gold';
+      wp.textContent = owned ? ch.weaponName : '🔒 ' + ch.cost + ' gold';
       if (!owned) wp.style.color = metaGold >= ch.cost ? '#f0c040' : '#8a4040';
       card.appendChild(wic); card.appendChild(nm); card.appendChild(wp);
       card.onclick = () => {
@@ -1690,7 +1690,7 @@
       projSpeed:160, projDmg:10, projColor:'#c040ff', novaCount:10 },
     { id:'plague',   mrow:27, name:'BLIGHT HERALD',       flying:false, speed:44, dmg:20, color:'#80c020',
       ability:'plague', plagueCd:3.5, plagueRadius:60, plagueDmg:6, plagueDur:5, plagueGrow:30, projCd:0 },
-    { id:'crystal',  mrow:5, name:'CRYSTAL GOLEM',        flying:false, speed:26, dmg:48, color:'#60f0e0',
+    { id:'crystal',  mrow:32, name:'CRYSTAL GOLEM',        flying:false, speed:26, dmg:48, color:'#60f0e0',
       ability:'shatter', shatterCd:3.0, shatterCount:12, shatterSpeed:240, shatterDmg:14, projCd:0 },
     { id:'bloodwitch', mrow:29, name:'BLOOD WITCH',       flying:true,  speed:38, dmg:22, color:'#e02040',
       ability:'drain', drainCd:4.0, drainDur:2.0, drainDmg:8, drainHeal:0.04, projCd:0 },
@@ -2044,7 +2044,8 @@
       weaponTimers.boomerang -= dt;
       if (weaponTimers.boomerang <= 0) {
         weaponTimers.boomerang = 1.8 * cd;
-        const a = Math.atan2(player.dirY, player.dirX);
+        const tgt = nearestEnemy(player.x, player.y, 500);
+        const a = tgt ? Math.atan2(tgt.y - player.y, tgt.x - player.x) : Math.atan2(player.dirY, player.dirX);
         const spd = 320 * ps;
         const dmg = (7 + up.boomerang.lvl * 3) * player.dmg;
         const curve = (Math.random() < 0.5 ? 1 : -1) * 140;
@@ -2160,7 +2161,7 @@
   let orbitAngle = 0;
   function update(dt) {
     gameTime += dt;
-    difficulty = gameTime / 25; // ramps over time
+    difficulty = gameTime / 33; // ramps over time
     if (shake > 0) shake = Math.max(0, shake - dt * 80);
     // regen + lifesteal pool refill (cap: 3 HP/s max from lifesteal)
     if (player.regen) player.hp = Math.min(player.maxHp, player.hp + player.regen*dt);
@@ -2213,7 +2214,7 @@
     // Spawning
     spawnTimer -= dt;
     const maxEnemies = 200;
-    const earlyBoost = gameTime < 30 ? 0.35 : 0;
+    const earlyBoost = gameTime < 30 ? 0.25 : 0;
     const spawnRate = clamp(0.9 - difficulty*0.05 - earlyBoost, 0.15, 0.9);
     if (spawnTimer <= 0 && enemies.length < maxEnemies) {
       spawnTimer = spawnRate;
@@ -2273,7 +2274,7 @@
             Audio2.tone(180, 0.15, 'sawtooth', 0.08, 100);
           } else if (bt.ability === 'shockwave') {
             const swr = bt.swRadius * (player.areaMul || 1);
-            e.swCharging = 0.35;
+            e.swCharging = 0.5;
             e.swRadius = swr;
             e.bossAbilityTimer = bt.swCd;
             Audio2.tone(80, 0.2, 'sine', 0.12, 40);
@@ -2360,7 +2361,7 @@
               const la = Math.random() * TAU;
               const ld = 40 + Math.random() * 200;
               const lx = player.x + Math.cos(la) * ld, ly = player.y + Math.sin(la) * ld;
-              bossLightning.push({ x:lx, y:ly, r:bt.lightningRadius, t:0.5, dmg:bt.lightningDmg, tick:0, delay:0.35+i*0.15, warn:0.35+i*0.15 });
+              bossLightning.push({ x:lx, y:ly, r:bt.lightningRadius, t:0.5, dmg:bt.lightningDmg, tick:0, delay:0.5+i*0.15, warn:0.5+i*0.15 });
             }
             e.bossAbilityTimer = bt.lightningCd;
             Audio2.tone(900, 0.15, 'sawtooth', 0.12, 200); juice(10, 0.05);
@@ -2413,7 +2414,7 @@
             Audio2.tone(150, 0.3, 'sine', 0.2, 300);
           } else if (bt.ability === 'divebomb') {
             if (d > 100) {
-              e.diveWindup = 0.3;
+              e.diveWindup = 0.5;
               e.diveStart = { x:e.x, y:e.y };
               e.diveTarget = { x:player.x, y:player.y };
               e.diveTime = 0;
@@ -2425,7 +2426,7 @@
             for (let i = 0; i < bt.pillarCount; i++) {
               const pa = TAU * i / bt.pillarCount + Math.random() * 0.3;
               const pr = 60 + Math.random() * bt.pillarRadius;
-              bossFirePillars.push({ x:player.x+Math.cos(pa)*pr, y:player.y+Math.sin(pa)*pr, r:30, t:bt.pillarDur, dmg:bt.pillarDmg, tick:0, delay:0.3+i*0.12 });
+              bossFirePillars.push({ x:player.x+Math.cos(pa)*pr, y:player.y+Math.sin(pa)*pr, r:30, t:bt.pillarDur, dmg:bt.pillarDmg, tick:0, delay:0.5+i*0.12 });
             }
             e.bossAbilityTimer = bt.pillarCd;
             Audio2.tone(100, 0.25, 'sawtooth', 0.15, 50); juice(8, 0.04);
@@ -2816,9 +2817,15 @@
       // Water balloon: no contact damage — splash-explodes when it lands.
       if (p.kind === 'balloon') {
         if (p.life <= 0) {
-          particles.push({ x:p.x, y:p.y, ring:true, r:12, maxR:p.splash, t:0.35, c:'#ff8a3a' });
+          particles.push({ x:p.x, y:p.y, ring:true, r:12, maxR:p.splash, t:0.45, c:'#ff8a3a' });
+          particles.push({ x:p.x, y:p.y, ring:true, r:8, maxR:p.splash*0.7, t:0.3, c:'#ffe060' });
+          for (let i = 0; i < 14; i++) {
+            const ea = TAU * i / 14 + Math.random() * 0.3;
+            const es = 60 + Math.random() * 120;
+            particles.push({ x:p.x, y:p.y, vx:Math.cos(ea)*es, vy:Math.sin(ea)*es, t:0.3+Math.random()*0.25, c:i%3===0?'#ffe080':'#ff5010', r:2+Math.random()*3 });
+          }
           for (const e of enemies) if (dist2(p.x,p.y,e.x,e.y) < p.splash*p.splash) damageEnemy(e, p.dmg, 0,0, true);
-          Audio2.tone(320, 0.12, 'sine', 0.16, 120); juice(6, 0.03);
+          Audio2.tone(320, 0.12, 'sine', 0.16, 120); Audio2.tone(80, 0.2, 'sawtooth', 0.1, 40); juice(8, 0.04);
         }
         continue;
       }
@@ -3219,7 +3226,7 @@
       // Divebomb windup warning circle at target
       if (e.boss && e.diveWindup > 0 && e.diveTarget) {
         const tx = e.diveTarget.x - camX, ty = e.diveTarget.y - camY;
-        const prog = 1 - e.diveWindup / 0.3;
+        const prog = 1 - e.diveWindup / 0.5;
         const pulse = 0.5 + 0.5 * Math.sin(gameTime * 12);
         const dr = e.bossType.diveRadius || 60;
         ctx.save();
@@ -3279,7 +3286,7 @@
     for (const l of bossLightning) {
       if (l.delay > 0) {
         const lx = l.x - camX, ly = l.y - camY;
-        const prog = 1 - l.delay / (l.warn || 0.35);
+        const prog = 1 - l.delay / (l.warn || 0.5);
         const pulse = 0.5 + 0.5 * Math.sin(gameTime * 12);
         ctx.save();
         ctx.strokeStyle = `rgba(100,200,255,${(0.3 + pulse * 0.4) * prog})`; ctx.lineWidth = 2;
@@ -3769,10 +3776,36 @@
         ctx.strokeStyle='#f7e14a'; ctx.lineWidth=3; ctx.shadowColor='#f7e14a'; ctx.shadowBlur=8;
         ctx.beginPath(); ctx.moveTo(-p.r,0); ctx.lineTo(-1,-3); ctx.lineTo(2,2); ctx.lineTo(p.r,-1); ctx.stroke(); ctx.shadowBlur=0;
       } else if (p.kind==='balloon') { // fireball
-        ctx.fillStyle='#ff7a1a'; ctx.shadowColor='#ff5a10'; ctx.shadowBlur=14;
-        ctx.beginPath(); ctx.arc(0,0,p.r,0,TAU); ctx.fill();
-        ctx.fillStyle='#ffe08a'; ctx.beginPath(); ctx.arc(-p.r*0.25,-p.r*0.25,p.r*0.45,0,TAU); ctx.fill();
-        ctx.shadowBlur=0;
+        const fa = Math.atan2(p.vy, p.vx);
+        ctx.rotate(fa);
+        const ft = gameTime * 12;
+        for (let t = 4; t >= 1; t--) {
+          const tr = p.r * (0.5 + t * 0.35);
+          const ta = 0.08 + (5 - t) * 0.06;
+          ctx.globalAlpha = ta;
+          ctx.fillStyle = t > 2 ? '#ff3000' : '#ff6a10';
+          ctx.beginPath(); ctx.ellipse(-t * 5, 0, tr * 0.6, tr, 0, 0, TAU); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 22;
+        const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, p.r);
+        cg.addColorStop(0, '#fffae0');
+        cg.addColorStop(0.3, '#ffb830');
+        cg.addColorStop(0.7, '#ff5a10');
+        cg.addColorStop(1, 'rgba(200,30,0,0)');
+        ctx.fillStyle = cg;
+        ctx.beginPath(); ctx.arc(0, 0, p.r * 1.1, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#fff8e0';
+        ctx.beginPath(); ctx.arc(0, 0, p.r * 0.35, 0, TAU); ctx.fill();
+        for (let i = 0; i < 5; i++) {
+          const sa = ft + i * TAU / 5;
+          const sr = p.r * (0.6 + 0.3 * Math.sin(ft * 2 + i));
+          ctx.globalAlpha = 0.5 + 0.3 * Math.sin(ft * 3 + i * 2);
+          ctx.fillStyle = i % 2 === 0 ? '#ffa020' : '#ff5010';
+          ctx.beginPath(); ctx.arc(Math.cos(sa) * sr * 0.5, Math.sin(sa) * sr * 0.5, p.r * 0.3, 0, TAU); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
       } else if (p.kind==='pizza') { // returning axe
         ctx.rotate(p.spin);
         ctx.fillStyle='#8a6a3a'; ctx.fillRect(-1.5,-p.r,3,p.r*2); // handle
@@ -3850,6 +3883,38 @@
     }
     ctx.globalAlpha = 1;
     ctx.restore(); // end screen-shake transform
+
+    // Off-screen boss arrow indicators
+    for (const e of enemies) {
+      if (!e.boss || e.dead) continue;
+      const sx = e.x - camX, sy = e.y - camY;
+      if (sx > -40 && sx < W + 40 && sy > -40 && sy < H + 40) continue;
+      const cx = W / 2, cy = H / 2;
+      const ang = Math.atan2(sy - cy, sx - cx);
+      const margin = 36;
+      const cosA = Math.cos(ang), sinA = Math.sin(ang);
+      const edgeX = clamp(cx + cosA * W, margin, W - margin);
+      const edgeY = clamp(cy + sinA * H, margin, H - margin);
+      const bCol = e.bossType.color || '#d02c6a';
+      const pulse = 0.7 + 0.3 * Math.sin(gameTime * 4);
+      ctx.save();
+      ctx.translate(edgeX, edgeY);
+      ctx.rotate(ang);
+      ctx.globalAlpha = pulse;
+      ctx.fillStyle = bCol;
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(14, 0);
+      ctx.lineTo(-8, -10);
+      ctx.lineTo(-4, 0);
+      ctx.lineTo(-8, 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
 
     if (dmgVignette > 0) {
       const va = clamp(dmgVignette * 2.2, 0, 0.55);
