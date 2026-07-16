@@ -305,7 +305,7 @@
     </div>
     <div class="hiscore" id="menuHi"></div>
     <div class="shop-gold" id="menuGold" style="margin-top:4px;font-size:15px;"></div>
-    <div class="credit" style="margin-top:10px;">Move to survive · Weapons auto-attack · Art from <a href="https://www.mirageonlineclassic.com" target="_blank" rel="noopener">Mirage Online Classic</a> · v0.9.0</div>
+    <div class="credit" style="margin-top:10px;">Move to survive · Weapons auto-attack · Art from <a href="https://www.mirageonlineclassic.com" target="_blank" rel="noopener">Mirage Online Classic</a> · v0.10.0</div>
   </div>
 </div>
 
@@ -1796,6 +1796,8 @@
     return pool[(Math.random() * pool.length) | 0];
   }
 
+  const levelDmgMul = 0.5, levelHpMul = 0.5;
+
   function spawnEnemy(boss) {
     const ang = Math.random() * TAU;
     const rad = Math.max(W, H) * 0.55 + 40 + Math.random() * 80;
@@ -1804,9 +1806,9 @@
     if (boss) {
       const b = BOSSES[bossIdx % BOSSES.length];
       bossIdx++;
-      const hp = 900 + difficulty*260;
+      const hp = (900 + difficulty*260) * levelHpMul;
       enemies.push({ x, y, r:46, hp, maxHp:hp, mrow:b.mrow,
-        speed:b.speed, dmg:b.dmg, xp:60, boss:true, bossType:b, flying:!!b.flying,
+        speed:b.speed, dmg:b.dmg * levelDmgMul, xp:60, boss:true, bossType:b, flying:!!b.flying,
         hit:0, score:100, faceDir:'down', animTime:0, bob:Math.random()*TAU,
         bossAbilityTimer: 2, bossCharging:false, chargeVx:0, chargeVy:0, chargeDur:0 });
       milestonePopups.push({ text:b.name, t:2.5, y:0 });
@@ -1815,8 +1817,8 @@
     }
     const t = pickEnemyType(currentMap);
     const hpScale = 1 + difficulty * 0.14;
-    enemies.push({ x, y, r:t.r, hp:t.hp*hpScale, maxHp:t.hp*hpScale, speed:t.speed*(1+difficulty*0.01),
-      dmg:t.dmg, xp:t.xp, mrow:t.mrow, hit:0, score:t.score, faceDir:'down', animTime:0,
+    enemies.push({ x, y, r:t.r, hp:t.hp*hpScale*levelHpMul, maxHp:t.hp*hpScale*levelHpMul, speed:t.speed*(1+difficulty*0.01),
+      dmg:t.dmg * levelDmgMul, xp:t.xp, mrow:t.mrow, hit:0, score:t.score, faceDir:'down', animTime:0,
       hue: Math.floor(Math.random() * 360),
       flying:!!t.flying, bob:Math.random()*TAU,
       ranged:!!t.ranged, projSpeed:t.projSpeed, projDmg:t.projDmg, fireCd:t.fireCd, range:t.range,
@@ -2359,7 +2361,7 @@
             Audio2.tone(180, 0.15, 'sawtooth', 0.08, 100);
           } else if (bt.ability === 'shockwave') {
             const swr = bt.swRadius * (player.areaMul || 1);
-            e.swCharging = 0.5;
+            e.swCharging = 1.25;
             e.swRadius = swr;
             e.bossAbilityTimer = bt.swCd;
             Audio2.tone(80, 0.2, 'sine', 0.12, 40);
@@ -2446,7 +2448,7 @@
               const la = Math.random() * TAU;
               const ld = 40 + Math.random() * 200;
               const lx = player.x + Math.cos(la) * ld, ly = player.y + Math.sin(la) * ld;
-              bossLightning.push({ x:lx, y:ly, r:bt.lightningRadius, t:0.5, dmg:bt.lightningDmg, tick:0, delay:0.5+i*0.15, warn:0.5+i*0.15 });
+              bossLightning.push({ x:lx, y:ly, r:bt.lightningRadius, t:0.5, dmg:bt.lightningDmg, tick:0, delay:1.25+i*0.15, warn:1.25+i*0.15 });
             }
             e.bossAbilityTimer = bt.lightningCd;
             Audio2.tone(900, 0.15, 'sawtooth', 0.12, 200); juice(10, 0.05);
@@ -2499,7 +2501,7 @@
             Audio2.tone(150, 0.3, 'sine', 0.2, 300);
           } else if (bt.ability === 'divebomb') {
             if (d > 100) {
-              e.diveWindup = 0.5;
+              e.diveWindup = 1.25;
               e.diveStart = { x:e.x, y:e.y };
               e.diveTarget = { x:player.x, y:player.y };
               e.diveTime = 0;
@@ -2511,7 +2513,7 @@
             for (let i = 0; i < bt.pillarCount; i++) {
               const pa = TAU * i / bt.pillarCount + Math.random() * 0.3;
               const pr = 60 + Math.random() * bt.pillarRadius;
-              bossFirePillars.push({ x:player.x+Math.cos(pa)*pr, y:player.y+Math.sin(pa)*pr, r:30, t:bt.pillarDur, dmg:bt.pillarDmg, tick:0, delay:0.5+i*0.12 });
+              bossFirePillars.push({ x:player.x+Math.cos(pa)*pr, y:player.y+Math.sin(pa)*pr, r:30, t:bt.pillarDur, dmg:bt.pillarDmg, tick:0, delay:1.25+i*0.12 });
             }
             e.bossAbilityTimer = bt.pillarCd;
             Audio2.tone(100, 0.25, 'sawtooth', 0.15, 50); juice(8, 0.04);
@@ -3311,7 +3313,7 @@
       // Divebomb windup warning circle at target
       if (e.boss && e.diveWindup > 0 && e.diveTarget) {
         const tx = e.diveTarget.x - camX, ty = e.diveTarget.y - camY;
-        const prog = 1 - e.diveWindup / 0.5;
+        const prog = 1 - e.diveWindup / 1.25;
         const pulse = 0.5 + 0.5 * Math.sin(gameTime * 12);
         const dr = e.bossType.diveRadius || 60;
         ctx.save();
@@ -3371,7 +3373,7 @@
     for (const l of bossLightning) {
       if (l.delay > 0) {
         const lx = l.x - camX, ly = l.y - camY;
-        const prog = 1 - l.delay / (l.warn || 0.5);
+        const prog = 1 - l.delay / (l.warn || 1.25);
         const pulse = 0.5 + 0.5 * Math.sin(gameTime * 12);
         ctx.save();
         ctx.strokeStyle = `rgba(100,200,255,${(0.3 + pulse * 0.4) * prog})`; ctx.lineWidth = 2;
