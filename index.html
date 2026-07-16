@@ -494,32 +494,117 @@
     revive()  { [392,523,659,880].forEach((f,i)=>setTimeout(()=>this.tone(f,0.16,'sine',0.22),i*90)); },
     over()    { [440,330,262,196].forEach((f,i)=>setTimeout(()=>this.tone(f,0.22,'triangle',0.22),i*140)); },
     heartbeat() { this.tone(55, 0.15, 'sine', 0.3, 40); setTimeout(()=>this.tone(55, 0.12, 'sine', 0.2, 35), 150); },
-    // simple looping bassline/arp as background music
+    // power-pop background music (Weezer-inspired)
+    powerChord(freq, t, dur, vol) {
+      if (!this.ac) return;
+      const root = freq, fifth = freq * 1.5, oct = freq * 2;
+      [root, fifth, oct].forEach((f, idx) => {
+        const o1 = this.ac.createOscillator();
+        const g = this.ac.createGain();
+        o1.type = 'triangle'; o1.frequency.setValueAtTime(f, t);
+        const lp = this.ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1200;
+        o1.connect(lp); lp.connect(g); g.connect(this.musicGain);
+        const v = vol * (idx === 2 ? 0.5 : 0.8);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(v, t + 0.01);
+        g.gain.setValueAtTime(v, t + dur * 0.7);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o1.start(t); o1.stop(t + dur + 0.02);
+      });
+    },
+    drum(t, kind) {
+      if (!this.ac) return;
+      if (kind === 'kick') {
+        const o = this.ac.createOscillator(), g = this.ac.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+        g.gain.setValueAtTime(0.7, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+        o.connect(g); g.connect(this.musicGain); o.start(t); o.stop(t + 0.17);
+        this.noise2(t, 0.02, 0.25, 200);
+      } else if (kind === 'snare') {
+        const o = this.ac.createOscillator(), g = this.ac.createGain();
+        o.type = 'triangle'; o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(100, t + 0.05);
+        g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+        o.connect(g); g.connect(this.musicGain); o.start(t); o.stop(t + 0.1);
+        this.noise2(t, 0.07, 0.22, 3000);
+      } else if (kind === 'hat') {
+        this.noise2(t, 0.03, 0.12, 8000);
+      }
+    },
+    noise2(t, dur, vol, hp) {
+      if (!this.ac) return;
+      const n = Math.floor(this.ac.sampleRate * dur);
+      const buf = this.ac.createBuffer(1, n, this.ac.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      const src = this.ac.createBufferSource(); src.buffer = buf;
+      const g = this.ac.createGain(); g.gain.value = vol;
+      const f = this.ac.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp;
+      src.connect(f); f.connect(g); g.connect(this.musicGain);
+      src.start(t);
+    },
     startMusic() {
       if (!this.ac || this.musicTimer) return;
-      const bass = [55, 55, 82, 73], arp = [220, 262, 330, 262, 294, 220, 330, 294];
-      this.step = 0;
+      const bpm = 170, beatLen = 60 / bpm;
+      const chordProg = [
+        { root: 110, dur: 4 },
+        { root: 146.83, dur: 4 },
+        { root: 87.31, dur: 4 },
+        { root: 98, dur: 2 }, { root: 110, dur: 2 }
+      ];
+      const melody1 = [440, 0, 523, 440, 330, 0, 392, 330, 523, 0, 659, 523, 440, 392, 330, 294];
+      const melody2 = [587, 0, 523, 440, 523, 0, 440, 392, 440, 523, 587, 659, 523, 440, 392, 0];
+      this.step = 0; this.section = 0; this.totalBeats = 0;
+      const scheduleAhead = 0.05;
       const beat = () => {
-        if (!this.muted && this.ac) {
-          const t = this.ac.currentTime;
-          // bass
-          if (this.step % 2 === 0) {
-            const o = this.ac.createOscillator(), g = this.ac.createGain();
-            o.type='triangle'; o.frequency.value = bass[(this.step/2) % bass.length];
-            g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.5,t+0.02);
-            g.gain.exponentialRampToValueAtTime(0.0001,t+0.28);
-            o.connect(g); g.connect(this.musicGain); o.start(t); o.stop(t+0.3);
-          }
-          // arp
-          const o2 = this.ac.createOscillator(), g2 = this.ac.createGain();
-          o2.type='square'; o2.frequency.value = arp[this.step % arp.length];
-          g2.gain.setValueAtTime(0.0001,t); g2.gain.exponentialRampToValueAtTime(0.16,t+0.01);
-          g2.gain.exponentialRampToValueAtTime(0.0001,t+0.16);
-          o2.connect(g2); g2.connect(this.musicGain); o2.start(t); o2.stop(t+0.18);
+        if (!this.ac || this.muted) { this.step++; this.totalBeats++; return; }
+        const t = this.ac.currentTime + scheduleAhead;
+        const sectionLen = 16;
+        const beatInSection = this.totalBeats % sectionLen;
+        this.section = Math.floor(this.totalBeats / sectionLen) % 4;
+        let chordBeat = 0, ci = 0;
+        for (const c of chordProg) {
+          if (beatInSection < chordBeat + c.dur) { ci = chordProg.indexOf(c); break; }
+          chordBeat += c.dur;
         }
-        this.step++;
+        const chord = chordProg[ci];
+        if (this.section < 3) {
+          const sub = beatInSection % 2;
+          if (sub === 0) {
+            this.powerChord(chord.root, t, beatLen * 1.8, 0.07);
+          }
+          if (beatInSection % 4 === 2) {
+            this.powerChord(chord.root * 2, t, beatLen * 0.8, 0.04);
+          }
+        } else {
+          this.powerChord(chord.root, t, beatLen * 0.45, 0.09);
+        }
+        const o3 = this.ac.createOscillator(), g3 = this.ac.createGain();
+        o3.type = 'triangle'; o3.frequency.value = chord.root * 0.5;
+        g3.gain.setValueAtTime(0.35, t); g3.gain.exponentialRampToValueAtTime(0.0001, t + beatLen * 0.85);
+        o3.connect(g3); g3.connect(this.musicGain); o3.start(t); o3.stop(t + beatLen * 0.9);
+        this.drum(t, 'kick');
+        this.drum(t, 'hat');
+        if (beatInSection % 4 === 2) this.drum(t, 'snare');
+        if (this.section >= 1 && beatInSection % 2 === 1) this.drum(t + beatLen * 0.5, 'hat');
+        if (this.section === 3 && beatInSection % 4 === 3) { this.drum(t + beatLen * 0.5, 'snare'); this.drum(t + beatLen * 0.25, 'kick'); }
+        if (this.section >= 1) {
+          const mel = this.section === 2 ? melody2 : melody1;
+          const note = mel[beatInSection % mel.length];
+          if (note > 0) {
+            const om = this.ac.createOscillator(), gm = this.ac.createGain();
+            om.type = 'triangle';
+            om.frequency.setValueAtTime(note, t);
+            gm.gain.setValueAtTime(0.0001, t);
+            gm.gain.linearRampToValueAtTime(0.08, t + 0.01);
+            gm.gain.setValueAtTime(0.08, t + beatLen * 0.5);
+            gm.gain.exponentialRampToValueAtTime(0.0001, t + beatLen * 0.85);
+            const lp = this.ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800;
+            om.connect(lp); lp.connect(gm); gm.connect(this.musicGain);
+            om.start(t); om.stop(t + beatLen * 0.9);
+          }
+        }
+        this.step++; this.totalBeats++;
       };
-      this.musicTimer = setInterval(beat, 200);
+      this.musicTimer = setInterval(beat, beatLen * 1000);
     },
     stopMusic() { if (this.musicTimer) { clearInterval(this.musicTimer); this.musicTimer = null; } }
   };
