@@ -89,11 +89,12 @@
   /* Level up cards */
   #levelup { z-index: 12; }
   #levelup h2 { color: #f0c040; text-shadow: 0 0 14px rgba(240,192,64,0.5); margin-bottom: 20px; font-size: clamp(22px, 6vw, 34px); }
-  .cards { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; max-width: 720px; }
+  .cards { display: flex; gap: 12px; flex-wrap: nowrap; justify-content: center; max-width: 960px; }
   .card {
-    width: 200px; background: #141a2b; border: 2px solid #2a3350; border-radius: 12px;
-    padding: 18px 16px; cursor: pointer; transition: transform .08s, border-color .08s, background .08s;
+    width: 160px; background: #141a2b; border: 2px solid #2a3350; border-radius: 12px;
+    padding: 14px 12px; cursor: pointer; transition: transform .08s, border-color .08s, background .08s;
   }
+  .action-row { display: flex; gap: 12px; justify-content: center; margin-top: 12px; }
   .card:hover, .card:active { transform: translateY(-4px); border-color: #f0c040; background: #1b2338; }
   .card .ic { font-size: 40px; margin-bottom: 10px; }
   .card .nm { font-weight: 700; font-size: 17px; margin-bottom: 6px; }
@@ -104,9 +105,11 @@
     border-radius: 6px; font-size: 11px; color: #ff4040; cursor: pointer; text-align: center; font-weight: 700;
     letter-spacing: 0.5px; text-transform: uppercase; }
   .ban-btn:hover { background: rgba(220,40,40,0.7); color: #ff6060; border-color: #ff4040; }
-  .skip-btn { width: 200px; padding: 12px 16px; background: #141a2b; border: 2px solid #2a3350; border-radius: 12px;
-    cursor: pointer; text-align: center; color: #7a8498; font-size: 14px; font-weight: 700; transition: transform .08s, border-color .08s; }
-  .skip-btn:hover { transform: translateY(-4px); border-color: #7a8498; color: #a0aab8; }
+  .skip-btn { display: flex; align-items: center; justify-content: center; color: #5a6478; border-color: #222840; }
+  .skip-btn:hover { transform: translateY(-4px); border-color: #7a8498; color: #a0aab8; background: #1b2338; }
+  .reroll-btn { width: auto; padding: 8px 24px; background: #141a2b; border: 1px solid #7ab6ff; border-radius: 8px;
+    cursor: pointer; text-align: center; color: #7ab6ff; font-size: 12px; font-weight: 600; transition: transform .08s, border-color .08s; margin-top: 6px; }
+  .reroll-btn:hover { transform: translateY(-2px); background: #1b2338; }
 
   /* HUD */
   #hud { position: fixed; top: 0; left: 0; right: 0; z-index: 5; pointer-events: none; padding: 10px 14px; }
@@ -213,13 +216,13 @@
     .inv-slot .inv-lv { font-size: 8px; }
     .topbtns { top: 5px; right: 8px; gap: 5px; }
     .iconbtn { width: 38px; height: 38px; font-size: 18px; border-radius: 8px; }
-    .card { width: 160px; padding: 12px 10px; }
+    .card { width: 140px; padding: 10px 8px; }
     .card .ic { font-size: 30px; margin-bottom: 6px; }
     .card .nm { font-size: 14px; margin-bottom: 4px; }
     .card .lv { font-size: 11px; margin-bottom: 5px; }
     .card .ds { font-size: 11px; line-height: 1.35; }
     .cards { gap: 10px; }
-    .skip-btn { width: 160px; padding: 10px 12px; font-size: 13px; }
+    .reroll-btn { padding: 6px 16px; font-size: 11px; }
     .ban-btn { font-size: 10px; padding: 4px 10px; }
     #levelup h2 { margin-bottom: 12px; }
     .shop-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -240,12 +243,12 @@
     #playBtn { padding: 14px 40px; }
   }
   @media (max-width: 380px) {
-    .card { width: 140px; padding: 10px 8px; }
-    .card .ic { font-size: 26px; }
-    .card .nm { font-size: 13px; }
-    .card .ds { font-size: 10px; }
-    .cards { gap: 8px; }
-    .skip-btn { width: 140px; }
+    .card { width: 120px; padding: 8px 6px; }
+    .card .ic { font-size: 22px; }
+    .card .nm { font-size: 12px; }
+    .card .ds { font-size: 9px; }
+    .cards { gap: 6px; }
+    .reroll-btn { padding: 5px 14px; }
     .char-card { width: 78px; padding: 6px 4px 6px; }
     .shop-grid { grid-template-columns: repeat(3, 1fr); }
     #hudrow { padding-right: 90px; }
@@ -257,7 +260,7 @@
     .card { padding: 8px 8px; }
     .card .ic { font-size: 24px; margin-bottom: 4px; }
     .card .ds { font-size: 10px; }
-    .skip-btn { padding: 8px 10px; }
+    .reroll-btn { padding: 5px 10px; }
     .help { display: none; }
     .credit { display: none; }
     #menu .menu-content { padding: 12px 16px; }
@@ -320,6 +323,14 @@
 <div id="charSelect" class="overlay hidden">
   <h2>CHOOSE YOUR HERO</h2>
   <div class="char-grid" id="charGrid"></div>
+  <div class="map-select" style="margin:14px auto 4px;display:flex;gap:10px;justify-content:center;">
+    <div class="map-btn selected" data-map="0" style="cursor:pointer;padding:8px 18px;border-radius:8px;border:2px solid #2a3350;background:#141a2b;color:#9aa8c0;font-size:13px;font-weight:600;transition:border-color .1s,color .1s;">
+      🌲 Forest
+    </div>
+    <div class="map-btn" data-map="1" style="cursor:pointer;padding:8px 18px;border-radius:8px;border:2px solid #2a3350;background:#141a2b;color:#9aa8c0;font-size:13px;font-weight:600;transition:border-color .1s,color .1s;">
+      💀 Dark Wastes
+    </div>
+  </div>
   <button class="btn" id="charConfirm">PLAY</button>
   <button class="char-back" id="charBack">← Back</button>
 </div>
@@ -816,12 +827,32 @@
   // Water forms rare irregular ponds in meadow/forest biomes only. We use
   // a small noise field with a low threshold so lakes are localized blobs.
   const WATER_SCALE = 5;
-  function isWaterCell(tx, ty) {
+  const _waterCache = {};
+  function rawWater(tx, ty) {
+    const k = tx + ',' + ty;
+    if (_waterCache[k] !== undefined) return _waterCache[k];
     const bi = biomeAt(tx, ty);
-    if (bi === 3) return false; // no water in desert
-    if (Math.abs(tx) <= 3 && Math.abs(ty) <= 3) return false;
+    if (bi === 3 || bi === 5) { _waterCache[k] = false; return false; }
+    if (Math.abs(tx) <= 3 && Math.abs(ty) <= 3) { _waterCache[k] = false; return false; }
     const thresh = (bi === 0 || bi === 1) ? 0.20 : 0.12;
-    return vnoise(tx / WATER_SCALE + 11.3, ty / WATER_SCALE + 27.9) < thresh;
+    const r = vnoise(tx / WATER_SCALE + 11.3, ty / WATER_SCALE + 27.9) < thresh;
+    _waterCache[k] = r; return r;
+  }
+  function isWaterCell(tx, ty) {
+    if (rawWater(tx, ty)) return true;
+    if (rawWater(tx-1, ty) && rawWater(tx+1, ty)) return true;
+    if (rawWater(tx, ty-1) && rawWater(tx, ty+1)) return true;
+    if (rawWater(tx-1, ty) && rawWater(tx+2, ty)) return true;
+    if (rawWater(tx+1, ty) && rawWater(tx-2, ty)) return true;
+    if (rawWater(tx, ty-1) && rawWater(tx, ty+2)) return true;
+    if (rawWater(tx, ty+1) && rawWater(tx, ty-2)) return true;
+    let adj = 0;
+    if (rawWater(tx-1, ty-1)) adj++;
+    if (rawWater(tx+1, ty-1)) adj++;
+    if (rawWater(tx-1, ty+1)) adj++;
+    if (rawWater(tx+1, ty+1)) adj++;
+    if (adj >= 2) return true;
+    return false;
   }
   // 4x3 water autotile in water.png. Map 4-cardinal grass-adjacency bitmask
   const WATER_UV = {
@@ -902,8 +933,12 @@
   // ground.png: 0-13 plain grass (14 variants), 14-20 R83 flowers,
   // 21-27 R84 flowers, 28 grass edge, 29-30 fern overlays,
   // 31-32 plain grass, 33 sparse overlay, 34 desert, 35-37 stone/cobble/gravel
+  // 38-59 dirt variants, 60-67 sand, 68-71 grey stone, 72-73 purple stone
   const GRASS_BASES = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,31,32];
   const GRASS_FLOWERS = [14,15,16,17,18,19,20,21,22,23,24,25,26,27];
+  const DIRT_BASES = [38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53];
+  const SAND_BASES = [34,60,61,62,63,65,66,67];
+  const STONE_BASES = [35,36,37,68,69,70,71];
   function groundIdx(bi, tx, ty) {
     const h = th(tx, ty, 1);
     if (bi === 0 || bi === 1) {
@@ -913,9 +948,20 @@
       if (bi === 1 && h < 0.10) return GRASS_FLOWERS[Math.floor(h / 0.10 * GRASS_FLOWERS.length)];
       return base;
     }
-    if (bi === 2) return h < 0.4 ? 35 : h < 0.72 ? 36 : 37;
-    if (bi === 3) return 34;
-    return h < 0.45 ? 35 : h < 0.75 ? 36 : 37;
+    if (bi === 2) {
+      const si = Math.floor(th(tx, ty, 4) * STONE_BASES.length);
+      return STONE_BASES[Math.min(si, STONE_BASES.length - 1)];
+    }
+    if (bi === 3) {
+      const si = Math.floor(th(tx, ty, 4) * SAND_BASES.length);
+      return SAND_BASES[Math.min(si, SAND_BASES.length - 1)];
+    }
+    if (bi === 5) {
+      const di = Math.floor(th(tx, ty, 4) * DIRT_BASES.length);
+      return DIRT_BASES[Math.min(di, DIRT_BASES.length - 1)];
+    }
+    const ri = Math.floor(th(tx, ty, 4) * STONE_BASES.length);
+    return STONE_BASES[Math.min(ri, STONE_BASES.length - 1)];
   }
   function mask1Idx(bi, tx, ty) {
     const h = th(tx, ty, 2);
@@ -924,6 +970,7 @@
     if (bi === 1) return h < 0.02 ? 3 : h < 0.05 ? 0 : h < 0.08 ? 1 : -1;
     if (bi === 2) return h < 0.04 ? 4 : -1;
     if (bi === 3) return h < 0.03 ? 4 : -1;
+    if (bi === 5) return h < 0.04 ? 4 : -1;                     // dark wastes: bones
     return h < 0.05 ? 4 : -1;                                   // ruins: bones
   }
   // Blood-splat variants in mask1.png (indices 5..116). Never used as ambient decor —
@@ -966,7 +1013,7 @@
     { sx:96,  w:64, h:96,  bw:28, bh:24 }, // 1 oval tree (2x3)
     { sx:160, w:32, h:64,  bw:16, bh:18 }, // 2 palm (1x2)
     { sx:192, w:32, h:64,  bw:18, bh:20 }, // 3 pine (1x2)
-    { sx:224, w:32, h:32,  bw:20, bh:20 }, // 4 bush (1x1)
+    { sx:224, w:32, h:32,  bw:0,  bh:0  }, // 4 bush (1x1, walk-through)
     { sx:256, w:32, h:32,  bw:26, bh:22 }, // 5 well
     { sx:288, w:32, h:32,  bw:22, bh:22 }, // 6 gravestone
     { sx:320, w:32, h:32,  bw:24, bh:22 }, // 7 barrel
@@ -1020,6 +1067,20 @@
   //      group into thematic pockets instead of scattering random landmarks.
   // Multi-tile pieces also require biomeConsistent() so a pyramid can't spill
   // onto grass and a castle wall can't straddle two biomes.
+  function buildingClear(tx, ty, spacing) {
+    const hSelf = th(tx, ty, 3);
+    for (let dy = -spacing; dy <= spacing; dy++) {
+      for (let dx = -spacing; dx <= spacing; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        if (th(tx + dx, ty + dy, 3) < hSelf) return false;
+      }
+    }
+    return true;
+  }
+  function settlePlot(tx, ty) {
+    return buildingClear(tx, ty, 4);
+  }
+
   function objAt(tx, ty) {
     if (Math.abs(tx) <= 2 && Math.abs(ty) <= 2) return -1;
     if (isWaterCell(tx, ty) || isPathCell(tx, ty)) return -1;
@@ -1030,16 +1091,18 @@
 
     if (bi === 0) { // MEADOW
       if (settle > 0.88) {
-        if (h < 0.015 && biomeConsistent(tx, ty, 2, 2)) return 27; // church
-        if (h < 0.025 && biomeConsistent(tx, ty, 2, 2)) return 28; // tavern
-        if (h < 0.04 && biomeConsistent(tx, ty, 2, 2)) return 13;  // log cabin
-        if (h < 0.05) return 29;                                    // cottage
-        if (h < 0.06) return 15;                                    // small house
-        if (h < 0.07) return 11;                                    // chest
-        if (h < 0.09) return 7;                                     // barrel
-        if (h < 0.10) return 33;                                    // barrel blue
-        if (h < 0.12) return 5;                                     // well
-        if (h < 0.16) return 12;                                    // small bush
+        if (settlePlot(tx, ty)) {
+          if (h < 0.015 && biomeConsistent(tx, ty, 2, 2)) return 27; // church
+          if (h < 0.025 && biomeConsistent(tx, ty, 2, 2)) return 28; // tavern
+          if (h < 0.04 && biomeConsistent(tx, ty, 2, 2)) return 13;  // log cabin
+          if (h < 0.05) return 29;                                    // cottage
+          if (h < 0.06) return 15;                                    // small house
+          if (h < 0.07) return 11;                                    // chest
+          if (h < 0.09) return 7;                                     // barrel
+          if (h < 0.10) return 33;                                    // barrel blue
+          if (h < 0.12) return 5;                                     // well
+          if (h < 0.16) return 12;                                    // small bush
+        }
       }
       if (h < 0.014) return 0;   // fruit tree
       if (h < 0.022) return 1;   // oval tree
@@ -1051,11 +1114,13 @@
 
     if (bi === 1) { // FOREST
       if (settle > 0.91) {
-        if (h < 0.015 && biomeConsistent(tx, ty, 2, 2)) return 13; // log cabin
-        if (h < 0.025) return 29;                                   // cottage
-        if (h < 0.035) return 11;                                   // chest
-        if (h < 0.045) return 34;                                   // barrel side
-        if (h < 0.055) return 37;                                   // cauldron
+        if (settlePlot(tx, ty)) {
+          if (h < 0.015 && biomeConsistent(tx, ty, 2, 2)) return 13; // log cabin
+          if (h < 0.025) return 29;                                   // cottage
+          if (h < 0.035) return 11;                                   // chest
+          if (h < 0.045) return 34;                                   // barrel side
+          if (h < 0.055) return 37;                                   // cauldron
+        }
       }
       if (h < 0.010) return 0;   // fruit tree
       if (h < 0.020) return 1;   // oval tree
@@ -1092,9 +1157,9 @@
     }
 
     if (bi === 3) { // DESERT
-      if (ruin > 0.80 && h < 0.03 && biomeConsistent(tx, ty, 3, 5)) return 17; // pyramid
+      if (ruin > 0.80 && h < 0.03 && biomeConsistent(tx, ty, 3, 5) && buildingClear(tx, ty, 4)) return 17; // pyramid
       if (settle > 0.86) {
-        if (h < 0.03 && biomeConsistent(tx, ty, 2, 2)) return 14; // stone house outpost
+        if (h < 0.03 && biomeConsistent(tx, ty, 2, 2) && settlePlot(tx, ty)) return 14; // stone house outpost
         if (h < 0.05) return 7;                                    // barrel
       }
       if (h < 0.055) return 10;  // cactus
@@ -1103,15 +1168,43 @@
       return -1;
     }
 
+    if (bi === 5) { // DARK WASTES (dirt)
+      if (settle > 0.88) {
+        if (settlePlot(tx, ty)) {
+          if (h < 0.012 && biomeConsistent(tx, ty, 2, 2)) return 14; // stone house
+          if (h < 0.025) return 9;                                    // altar
+          if (h < 0.04) return 11;                                    // chest
+          if (h < 0.055) return 38;                                   // pot dark
+          if (h < 0.07) return 7;                                     // barrel
+        }
+      }
+      if (grave > 0.70) {
+        if (h < 0.10) return 26;                                     // stone cross
+        if (h < 0.20) return 6;                                      // gravestone
+      }
+      if (ruin > 0.75) {
+        if (h < 0.08) return 20;                                     // wall tower fragment
+        if (h < 0.14) return 8;                                      // pillars
+      }
+      if (h < 0.012) return 22;                                      // dead tree
+      if (h < 0.022) return 43;                                      // dead tree dark
+      if (h < 0.030) return 42;                                      // dead tree light
+      if (h < 0.040) return 36;                                      // barrel open
+      if (h < 0.050) return 34;                                      // barrel side
+      return -1;
+    }
+
     // RUINS (bi === 4)
     if (settle > 0.90) {
-      if (h < 0.008 && biomeConsistent(tx, ty, 6, 6)) return 32;  // castle
-      if (h < 0.015 && biomeConsistent(tx, ty, 3, 3)) return 31;  // large church
-      if (h < 0.025 && biomeConsistent(tx, ty, 2, 2)) return 30;  // stone church
-      if (h < 0.035 && biomeConsistent(tx, ty, 2, 2)) return 14;  // stone house
-      if (h < 0.05) return 25;                                     // angel statue
-      if (h < 0.07) return 8;                                      // pillars
-      if (h < 0.08) return 11;                                     // chest
+      if (settlePlot(tx, ty)) {
+        if (h < 0.008 && biomeConsistent(tx, ty, 6, 6) && buildingClear(tx, ty, 6)) return 32;  // castle
+        if (h < 0.015 && biomeConsistent(tx, ty, 3, 3)) return 31;  // large church
+        if (h < 0.025 && biomeConsistent(tx, ty, 2, 2)) return 30;  // stone church
+        if (h < 0.035 && biomeConsistent(tx, ty, 2, 2)) return 14;  // stone house
+        if (h < 0.05) return 25;                                     // angel statue
+        if (h < 0.07) return 8;                                      // pillars
+        if (h < 0.08) return 11;                                     // chest
+      }
     }
     if (ruin > 0.75) {
       if (h < 0.06 && biomeConsistent(tx, ty, 2, 1)) return 19;   // brick accent
@@ -1215,25 +1308,16 @@
   document.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
-  // Boss focus targeting — click/tap a boss to focus weapons on it
-  function handleFocusClick(cx, cy) {
-    if (state !== 'playing') return;
-    const wx = cx + camX, wy = cy + camY;
-    let best = null, bestD = 80 * 80;
+  // Boss focus targeting — auto-focus nearest boss within range
+  function updateFocusTarget() {
+    let best = null, bestD = 350 * 350;
     for (const e of enemies) {
-      if (!e.boss) continue;
-      const d = dist2(wx, wy, e.x, e.y);
+      if (!e.boss || e.dead) continue;
+      const d = dist2(player.x, player.y, e.x, e.y);
       if (d < bestD) { bestD = d; best = e; }
     }
-    if (best) { focusTarget = (focusTarget === best) ? null : best; }
-    else { focusTarget = null; }
+    focusTarget = best;
   }
-  canvas.addEventListener('click', e => handleFocusClick(e.offsetX * DPR, e.offsetY * DPR));
-  canvas.addEventListener('touchend', e => {
-    if (touchId !== null) return;
-    const t = e.changedTouches[0];
-    if (t) handleFocusClick(t.clientX * DPR, t.clientY * DPR);
-  });
 
   // ---- Game state -----------------------------------------------------
   let state = 'menu'; // menu | playing | levelup | dead | paused
@@ -1252,6 +1336,7 @@
   let poisonClouds = [], iceWalls = [], secondWindUses = 0, shieldBashVfx = [], bossTrails = [];
   let momentumStacks = 0, adrenalineTimer = 0, clones = [], bannedUpgrades = {}, meteorImpacts = [];
   let bossLightning = [], bossBeams = [], bossFirePillars = [], bossQuakes = [];
+  let lightningBolts = [];
   const KILL_MILESTONES = [25, 50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000];
   let milestonePopups = [], nextMilestoneIdx = 0;
   function juice(shakeAmt, stopAmt) {
@@ -1331,31 +1416,31 @@
   let runGold = 0;
 
   const SHOP_UPGRADES = [
-    { id:'s_maxhp',    name:'Max Health',    ic:'❤️', max:10, cost:i=>60+i*75,  desc:'+10 max HP per level' },
-    { id:'s_damage',   name:'Attack Power',  ic:'⚔️', max:10, cost:i=>75+i*90,  desc:'+5% weapon damage' },
-    { id:'s_speed',    name:'Move Speed',    ic:'👢', max:8,  cost:i=>60+i*60,  desc:'+3% movement speed' },
-    { id:'s_armor',    name:'Toughness',     ic:'🛡️', max:8,  cost:i=>90+i*75,  desc:'-1 damage from all hits' },
-    { id:'s_magnet',   name:'Magnetism',     ic:'🧲', max:6,  cost:i=>45+i*60,  desc:'+10% pickup radius' },
-    { id:'s_cooldown', name:'Haste',         ic:'⏳', max:8,  cost:i=>90+i*90,  desc:'-2% weapon cooldown' },
-    { id:'s_crit',     name:'Precision',     ic:'🎯', max:6,  cost:i=>100+i*100, desc:'+2% crit chance' },
-    { id:'s_xp',       name:'Wisdom',        ic:'📗', max:6,  cost:i=>75+i*75,  desc:'+5% XP gain' },
-    { id:'s_regen',    name:'Recovery',       ic:'💚', max:3,  cost:i=>90+i*90,  desc:'+0.08 HP/s regen' },
-    { id:'s_greed',    name:'Greed',         ic:'💰', max:5,  cost:i=>120+i*120, desc:'+10% gold earned' },
-    { id:'s_area',     name:'Blast Radius',  ic:'🔆', max:6,  cost:i=>90+i*90,  desc:'+5% area of effect' },
-    { id:'s_projspd',  name:'Velocity',      ic:'💫', max:6,  cost:i=>75+i*75,  desc:'+5% projectile speed' },
-    { id:'s_dodge',    name:'Evasion',       ic:'💨', max:3,  cost:i=>120+i*120, desc:'+1% dodge chance' },
-    { id:'s_knockback',name:'Impact',        ic:'🥊', max:5,  cost:i=>90+i*90,  desc:'+5% knockback force' },
-    { id:'s_luck',     name:'Fortune',       ic:'🍀', max:5,  cost:i=>100+i*100, desc:'+8% better drop rates' },
-    { id:'s_startlvl', name:'Head Start',    ic:'⭐', max:3,  cost:i=>250+i*250, desc:'Start each run +1 level' },
-    { id:'s_revive',   name:'Resurrection', ic:'🕊️', max:1,  cost:i=>500,       desc:'Start with 1 free revive (full HP)' },
-    { id:'s_choices',  name:'Extra Choice', ic:'🃏', max:2,  cost:i=>300+i*350, desc:'+1 card shown at level-up' },
-    { id:'s_reroll',   name:'Reroll',       ic:'🎲', max:3,  cost:i=>200+i*200, desc:'+1 reroll per run at level-up' },
-    { id:'s_bossGold', name:'Bounty Hunter',ic:'💀', max:5,  cost:i=>150+i*150, desc:'+20% bonus gold from bosses' },
-    { id:'s_startArm', name:'Iron Skin',    ic:'🔰', max:3,  cost:i=>120+i*120, desc:'Start with -1 damage taken per level' },
-    { id:'s_bossRes',  name:'Boss Resist', ic:'🏰', max:5,  cost:i=>100+i*100, desc:'-8% damage from boss attacks' },
-    { id:'s_goldRush', name:'Gold Rush',   ic:'💎', max:4,  cost:i=>130+i*130, desc:'+10% chance for double gold pickup' },
-    { id:'s_tenacity', name:'Tenacity',    ic:'🦷', max:4,  cost:i=>100+i*100, desc:'-10% knockback received from hits' },
-    { id:'s_surplus',  name:'Surplus',     ic:'🏦', max:5,  cost:i=>80+i*80,   desc:'+15 bonus gold earned per run' }
+    { id:'s_maxhp',    name:'Max Health',    ic:'❤️', max:10, cost:i=>120+i*150, desc:'+10 max HP per level' },
+    { id:'s_damage',   name:'Attack Power',  ic:'⚔️', max:10, cost:i=>150+i*180, desc:'+5% weapon damage' },
+    { id:'s_speed',    name:'Move Speed',    ic:'👢', max:8,  cost:i=>120+i*120, desc:'+3% movement speed' },
+    { id:'s_armor',    name:'Toughness',     ic:'🛡️', max:8,  cost:i=>180+i*150, desc:'-1 damage from all hits' },
+    { id:'s_magnet',   name:'Magnetism',     ic:'🧲', max:6,  cost:i=>90+i*120,  desc:'+10% pickup radius' },
+    { id:'s_cooldown', name:'Haste',         ic:'⏳', max:8,  cost:i=>180+i*180, desc:'-2% weapon cooldown' },
+    { id:'s_crit',     name:'Precision',     ic:'🎯', max:6,  cost:i=>200+i*200, desc:'+2% crit chance' },
+    { id:'s_xp',       name:'Wisdom',        ic:'📗', max:6,  cost:i=>150+i*150, desc:'+5% XP gain' },
+    { id:'s_regen',    name:'Recovery',       ic:'💚', max:3,  cost:i=>180+i*180, desc:'+0.08 HP/s regen' },
+    { id:'s_greed',    name:'Greed',         ic:'💰', max:5,  cost:i=>240+i*240, desc:'+10% gold earned' },
+    { id:'s_area',     name:'Blast Radius',  ic:'🔆', max:6,  cost:i=>180+i*180, desc:'+5% area of effect' },
+    { id:'s_projspd',  name:'Velocity',      ic:'💫', max:6,  cost:i=>150+i*150, desc:'+5% projectile speed' },
+    { id:'s_dodge',    name:'Evasion',       ic:'💨', max:3,  cost:i=>240+i*240, desc:'+1% dodge chance' },
+    { id:'s_knockback',name:'Impact',        ic:'🥊', max:5,  cost:i=>180+i*180, desc:'+5% knockback force' },
+    { id:'s_luck',     name:'Fortune',       ic:'🍀', max:5,  cost:i=>200+i*200, desc:'+8% better drop rates' },
+    { id:'s_startlvl', name:'Head Start',    ic:'⭐', max:1,  cost:i=>10000, desc:'Start each run +1 level' },
+    { id:'s_revive',   name:'Resurrection', ic:'🕊️', max:1,  cost:i=>1000,      desc:'Start with 1 free revive (full HP)' },
+    { id:'s_choices',  name:'Extra Choice', ic:'🃏', max:2,  cost:i=>600+i*700, desc:'+1 card shown at level-up' },
+    { id:'s_reroll',   name:'Reroll',       ic:'🎲', max:3,  cost:i=>400+i*400, desc:'+1 reroll per run at level-up' },
+    { id:'s_bossGold', name:'Bounty Hunter',ic:'💀', max:5,  cost:i=>300+i*300, desc:'+20% bonus gold from bosses' },
+    { id:'s_startArm', name:'Iron Skin',    ic:'🔰', max:3,  cost:i=>240+i*240, desc:'Start with -1 damage taken per level' },
+    { id:'s_bossRes',  name:'Boss Resist', ic:'🏰', max:5,  cost:i=>200+i*200, desc:'-8% damage from boss attacks' },
+    { id:'s_goldRush', name:'Gold Rush',   ic:'💎', max:4,  cost:i=>260+i*260, desc:'+10% chance for double gold pickup' },
+    { id:'s_tenacity', name:'Tenacity',    ic:'🦷', max:4,  cost:i=>200+i*200, desc:'-10% knockback received from hits' },
+    { id:'s_surplus',  name:'Surplus',     ic:'🏦', max:5,  cost:i=>160+i*160, desc:'+15 bonus gold earned per run' }
   ];
 
   let shopLevels = {};
@@ -1550,7 +1635,7 @@
     weaponTimers = { knife:0, orbit:0, nova:0, bolt:0, garlic:0, balloon:0, pizza:0, slam:0, poison:0, missile:0, shield:0, lstrike:0, icewall:0, boomerang:0, chains:0, meteor:0, clone:0, cross:0 };
     poisonClouds = []; iceWalls = []; secondWindUses = 0; shieldBashVfx = []; bossTrails = [];
     momentumStacks = 0; adrenalineTimer = 0; clones = []; bannedUpgrades = {}; meteorImpacts = [];
-    bossLightning = []; bossBeams = []; bossFirePillars = []; bossQuakes = [];
+    bossLightning = []; bossBeams = []; bossFirePillars = []; bossQuakes = []; lightningBolts = [];
     runGold = 0;
     focusTarget = null;
     bossIdx = Math.floor(Math.random() * BOSSES.length);
@@ -1615,6 +1700,8 @@
     if (picks.length === 0) { applyChoice('_heal'); return; }
     const cardsEl = document.getElementById('cards');
     cardsEl.innerHTML = '';
+    const oldAr = cardsEl.parentElement.querySelector('.action-row');
+    if (oldAr) oldAr.remove();
     picks.forEach(k => {
       const u = up[k];
       const isNew = u.lvl === 0;
@@ -1637,19 +1724,21 @@
       }
       cardsEl.appendChild(wrapper);
     });
+    const actionRow = document.createElement('div');
+    actionRow.className = 'action-row';
     const skipBtn = document.createElement('div');
-    skipBtn.className = 'skip-btn';
+    skipBtn.className = 'reroll-btn';
     skipBtn.textContent = 'Skip (+30 HP)';
     skipBtn.onclick = () => applyChoice('_heal');
-    cardsEl.appendChild(skipBtn);
+    actionRow.appendChild(skipBtn);
     if (rerollsLeft > 0) {
       const rerollBtn = document.createElement('div');
-      rerollBtn.className = 'skip-btn';
-      rerollBtn.style.cssText = 'color:#7ab6ff;border-color:#7ab6ff;margin-top:6px;';
+      rerollBtn.className = 'reroll-btn';
       rerollBtn.textContent = '🎲 Reroll (' + rerollsLeft + ' left)';
       rerollBtn.onclick = () => { rerollsLeft--; hide('levelup'); openLevelUp(); levelQueue++; };
-      cardsEl.appendChild(rerollBtn);
+      actionRow.appendChild(rerollBtn);
     }
+    cardsEl.parentElement.appendChild(actionRow);
     show('levelup');
   }
 
@@ -1711,37 +1800,37 @@
   // flying:true → ignores terrain/object collision. ranged:true → fires projectiles.
   // tier = min difficulty to appear; biomes = which biomes it roams (0 meadow,1 forest,2 rocky,3 desert,4 ruins)
   const ENEMY_TYPES = [
-    { mrow:0,  r:12, hp:10, speed:86, dmg:6,  xp:1, score:1, tier:0, biomes:[0,1] },        // 0 fox
-    { mrow:1,  r:12, hp:14, speed:74, dmg:8,  xp:2, score:2, tier:0, biomes:[0,1,4] },      // 1 spider
-    { mrow:2,  r:12, hp:12, speed:98, dmg:8,  xp:2, score:2, tier:0, biomes:[0,3] },        // 2 snake
-    { mrow:3,  r:14, hp:24, speed:60, dmg:11, xp:3, score:3, tier:2, biomes:[1,2] },        // 3 goblin
-    { mrow:4,  r:16, hp:42, speed:52, dmg:13, xp:4, score:4, tier:4, biomes:[2,4] },        // 4 medusa
-    { mrow:5,  r:22, hp:95, speed:40, dmg:17, xp:6, score:6, tier:8, biomes:[2] },          // 5 golem
-    { mrow:6,  r:14, hp:20, speed:92, dmg:10, xp:3, score:3, tier:1, biomes:[0,1] },        // 6 wolf
-    { mrow:7,  r:20, hp:80, speed:44, dmg:16, xp:5, score:5, tier:8, biomes:[1,2] },        // 7 troll
-    { mrow:8,  r:13, hp:26, speed:58, dmg:10, xp:3, score:3, tier:1, biomes:[2,4] },        // 8 skeleton
-    { mrow:9,  r:12, hp:16, speed:88, dmg:9,  xp:3, score:3, tier:1, biomes:[0,4] },        // 9 imp
-    { mrow:10, r:12, hp:18, speed:80, dmg:9,  xp:3, score:3, tier:1, biomes:[1,2,3] },      // 10 lizard
-    { mrow:11, r:22, hp:110,speed:36, dmg:18, xp:7, score:7, tier:6, biomes:[1] },          // 11 ent
-    { mrow:12, r:15, hp:34, speed:58, dmg:13, xp:4, score:4, tier:4, biomes:[2,3] },        // 12 orc
-    { mrow:13, r:13, hp:28, speed:46, dmg:8,  xp:4, score:4, tier:8, biomes:[4], ranged:true, projSpeed:190, projDmg:11, fireCd:2.8, range:380, projColor:'#c07bff' }, // 13 lich
+    { mrow:0,  r:12, hp:10, speed:86, dmg:9,  xp:1, score:1, tier:0, biomes:[0,1] },        // 0 fox
+    { mrow:1,  r:12, hp:14, speed:74, dmg:12, xp:2, score:2, tier:0, biomes:[0,1,4,5] },    // 1 spider
+    { mrow:2,  r:12, hp:12, speed:98, dmg:12, xp:2, score:2, tier:0, biomes:[0,3,5] },      // 2 snake
+    { mrow:3,  r:14, hp:24, speed:60, dmg:17, xp:3, score:3, tier:2, biomes:[1,2,5] },      // 3 goblin
+    { mrow:4,  r:16, hp:42, speed:52, dmg:20, xp:4, score:4, tier:4, biomes:[2,4,5] },      // 4 medusa
+    { mrow:5,  r:22, hp:95, speed:40, dmg:26, xp:6, score:6, tier:8, biomes:[2,5] },        // 5 golem
+    { mrow:6,  r:14, hp:20, speed:92, dmg:15, xp:3, score:3, tier:1, biomes:[0,1] },        // 6 wolf
+    { mrow:7,  r:20, hp:80, speed:44, dmg:24, xp:5, score:5, tier:8, biomes:[1,2] },        // 7 troll
+    { mrow:8,  r:13, hp:26, speed:58, dmg:15, xp:3, score:3, tier:1, biomes:[2,4,5] },      // 8 skeleton
+    { mrow:9,  r:12, hp:16, speed:88, dmg:14, xp:3, score:3, tier:1, biomes:[0,4,5] },      // 9 imp
+    { mrow:10, r:12, hp:18, speed:80, dmg:14, xp:3, score:3, tier:1, biomes:[1,2,3] },      // 10 lizard
+    { mrow:11, r:22, hp:110,speed:36, dmg:27, xp:7, score:7, tier:6, biomes:[1] },          // 11 ent
+    { mrow:12, r:15, hp:34, speed:58, dmg:20, xp:4, score:4, tier:4, biomes:[2,3,5] },      // 12 orc
+    { mrow:13, r:13, hp:28, speed:46, dmg:8,  xp:4, score:4, tier:8, biomes:[4,5], ranged:true, projSpeed:190, projDmg:11, fireCd:2.8, range:380, projColor:'#c07bff' }, // 13 lich
     { mrow:14, r:13, hp:20, speed:58, dmg:8,  xp:3, score:3, tier:4, biomes:[1,3], ranged:true, projSpeed:270, projDmg:10, fireCd:2.4, range:430, projColor:'#e8d090' }, // 14 archer
-    { mrow:15, r:14, hp:30, speed:46, dmg:9,  xp:5, score:5, tier:10, biomes:[3,4], ranged:true, projSpeed:200, projDmg:12, fireCd:2.8, range:380, projColor:'#ff5a5a' }, // 15 warlock
-    { mrow:16, r:13, hp:22, speed:64, dmg:9,  xp:4, score:4, tier:6, biomes:[3,4], ranged:true, projSpeed:240, projDmg:9,  fireCd:2.5, range:400, projColor:'#cfd6e6' }, // 16 assassin
-    { mrow:17, r:13, hp:22, speed:66, dmg:9,  xp:3, score:3, tier:2, biomes:[2,4], flying:true }, // 17 wraith
-    { mrow:18, r:13, hp:20, speed:72, dmg:8,  xp:3, score:3, tier:4, biomes:[4], flying:true },   // 18 ghost
+    { mrow:15, r:14, hp:30, speed:46, dmg:9,  xp:5, score:5, tier:10, biomes:[3,4,5], ranged:true, projSpeed:200, projDmg:12, fireCd:2.8, range:380, projColor:'#ff5a5a' }, // 15 warlock
+    { mrow:16, r:13, hp:22, speed:64, dmg:9,  xp:4, score:4, tier:6, biomes:[3,4,5], ranged:true, projSpeed:240, projDmg:9,  fireCd:2.5, range:400, projColor:'#cfd6e6' }, // 16 assassin
+    { mrow:17, r:13, hp:22, speed:66, dmg:14, xp:3, score:3, tier:2, biomes:[2,4,5], flying:true }, // 17 wraith
+    { mrow:18, r:13, hp:20, speed:72, dmg:12, xp:3, score:3, tier:4, biomes:[4,5], flying:true },   // 18 ghost
     { mrow:19, r:11, hp:16, speed:80, dmg:6,  xp:3, score:3, tier:6, biomes:[0,1], flying:true, ranged:true, projSpeed:210, projDmg:8, fireCd:2.6, range:360, projColor:'#f7f04a' }, // 19 wisp
     { mrow:20, r:14, hp:30, speed:56, dmg:9,  xp:4, score:4, tier:8, biomes:[2,3], flying:true, ranged:true, projSpeed:180, projDmg:10, fireCd:2.6, range:340, projColor:'#ff8a3a' }, // 20 fire elemental
-    { mrow:22, r:12, hp:18, speed:90, dmg:9,  xp:2, score:2, tier:0, biomes:[3] },              // 22 scorpion
-    { mrow:23, r:11, hp:14, speed:72, dmg:7,  xp:2, score:2, tier:0, biomes:[0,1,3] },          // 23 serpent
-    { mrow:24, r:18, hp:65, speed:48, dmg:14, xp:5, score:5, tier:6, biomes:[1,2] },             // 24 ogre
-    { mrow:25, r:13, hp:32, speed:44, dmg:9,  xp:5, score:5, tier:8, biomes:[4], ranged:true, projSpeed:170, projDmg:13, fireCd:3.0, range:400, projColor:'#a040e0' }, // 25 dark mage
-    { mrow:26, r:15, hp:50, speed:50, dmg:14, xp:5, score:5, tier:8, biomes:[2,4] },             // 26 death knight
-    { mrow:27, r:16, hp:36, speed:42, dmg:10, xp:3, score:3, tier:2, biomes:[0,1] },             // 27 slime
-    { mrow:28, r:18, hp:70, speed:46, dmg:15, xp:6, score:6, tier:8, biomes:[1] },               // 28 swamp beast
-    { mrow:29, r:13, hp:26, speed:52, dmg:8,  xp:4, score:4, tier:6, biomes:[1,4], ranged:true, projSpeed:200, projDmg:11, fireCd:2.6, range:390, projColor:'#c060f0' }, // 29 witch
-    { mrow:30, r:14, hp:40, speed:56, dmg:12, xp:4, score:4, tier:4, biomes:[2,4] },             // 30 skeleton warrior
-    { mrow:31, r:18, hp:55, speed:54, dmg:13, xp:5, score:5, tier:6, biomes:[1,4] }              // 31 giant spider
+    { mrow:22, r:12, hp:18, speed:90, dmg:14, xp:2, score:2, tier:0, biomes:[3,5] },            // 22 scorpion
+    { mrow:23, r:11, hp:14, speed:72, dmg:11, xp:2, score:2, tier:0, biomes:[0,1,3] },          // 23 serpent
+    { mrow:24, r:18, hp:65, speed:48, dmg:21, xp:5, score:5, tier:6, biomes:[1,2] },             // 24 ogre
+    { mrow:25, r:13, hp:32, speed:44, dmg:9,  xp:5, score:5, tier:8, biomes:[4,5], ranged:true, projSpeed:170, projDmg:13, fireCd:3.0, range:400, projColor:'#a040e0' }, // 25 dark mage
+    { mrow:26, r:15, hp:50, speed:50, dmg:21, xp:5, score:5, tier:8, biomes:[2,4,5] },           // 26 death knight
+    { mrow:27, r:16, hp:36, speed:42, dmg:15, xp:3, score:3, tier:2, biomes:[0,1] },             // 27 slime
+    { mrow:28, r:18, hp:70, speed:46, dmg:23, xp:6, score:6, tier:8, biomes:[1] },               // 28 swamp beast
+    { mrow:29, r:13, hp:26, speed:52, dmg:8,  xp:4, score:4, tier:6, biomes:[1,4,5], ranged:true, projSpeed:200, projDmg:11, fireCd:2.6, range:390, projColor:'#c060f0' }, // 29 witch
+    { mrow:30, r:14, hp:40, speed:56, dmg:12, xp:4, score:4, tier:4, biomes:[2,4,5] },           // 30 skeleton warrior
+    { mrow:31, r:18, hp:55, speed:54, dmg:13, xp:5, score:5, tier:6, biomes:[1,4,5] }            // 31 giant spider
   ];
   const BOSSES = [
     { id:'reaper',   mrow:21, name:'THE REAPER',        flying:true,  speed:42, dmg:30, color:'#d02c6a',
@@ -1778,7 +1867,7 @@
     { id:'crystal',  mrow:32, name:'CRYSTAL GOLEM',        flying:false, speed:26, dmg:48, color:'#60f0e0',
       ability:'shatter', shatterCd:3.0, shatterCount:12, shatterSpeed:240, shatterDmg:14, projCd:0 },
     { id:'bloodwitch', mrow:29, name:'BLOOD WITCH',       flying:true,  speed:38, dmg:22, color:'#e02040',
-      ability:'drain', drainCd:4.0, drainDur:2.0, drainDmg:8, drainHeal:0.04, projCd:0 },
+      ability:'drain', drainCd:5.0, drainDur:1.5, drainDmg:8, drainHeal:0.02, projCd:0 },
     { id:'thunderhawk', mrow:19, name:'STORM TALON',      flying:true,  speed:70, dmg:28, color:'#f0e040',
       ability:'divebomb', diveCd:3.0, diveSpeed:500, diveDmg:22, diveRadius:60, projCd:0 },
     { id:'demonking', mrow:15, name:'DEMON KING',         flying:true,  speed:40, dmg:32, color:'#ff3030',
@@ -1790,35 +1879,58 @@
 
   // pick a type appropriate to the biome the enemy spawns in, gated by difficulty
   function pickEnemyType(bi) {
-    let pool = ENEMY_TYPES.filter(t => t.tier <= difficulty && t.biomes.includes(bi));
-    if (!pool.length) pool = ENEMY_TYPES.filter(t => t.tier <= difficulty && t.biomes.includes(0));
+    const effDiff = difficulty + mapTierBonus();
+    let pool = ENEMY_TYPES.filter(t => t.tier <= effDiff && t.biomes.includes(bi));
+    if (!pool.length) pool = ENEMY_TYPES.filter(t => t.tier <= effDiff && t.biomes.includes(0));
     if (!pool.length) pool = [ENEMY_TYPES[0]];
-    return pool[(Math.random() * pool.length) | 0];
+    let pick = pool[(Math.random() * pool.length) | 0];
+    if (pick.ranged && Math.random() < 0.75) {
+      const melee = pool.filter(t => !t.ranged);
+      if (melee.length) pick = melee[(Math.random() * melee.length) | 0];
+    }
+    return pick;
   }
 
   const levelDmgMul = 0.5, levelHpMul = 0.5;
+  function mapHpMul()  { return currentMap === 5 ? 2.5 : 1; }
+  function mapDmgMul() { return currentMap === 5 ? 2.0 : 1; }
+  function mapSpdMul() { return currentMap === 5 ? 1.25 : 1; }
+  function mapTierBonus() { return currentMap === 5 ? 4 : 0; }
 
   function spawnEnemy(boss) {
     const ang = Math.random() * TAU;
-    const rad = Math.max(W, H) * 0.55 + 40 + Math.random() * 80;
+    const normalRad = Math.max(W, H) * 0.55 + 40 + Math.random() * 80;
+    const bossRad = Math.min(W, H) * 0.42 + Math.random() * 40;
+    const rad = boss ? bossRad : normalRad;
     const x = player.x + Math.cos(ang) * rad;
     const y = player.y + Math.sin(ang) * rad;
     if (boss) {
       const b = BOSSES[bossIdx % BOSSES.length];
       bossIdx++;
-      const hp = (900 + difficulty*260) * levelHpMul;
+      const hp = (500 + difficulty*320) * levelHpMul * mapHpMul();
       enemies.push({ x, y, r:46, hp, maxHp:hp, mrow:b.mrow,
-        speed:b.speed, dmg:b.dmg * levelDmgMul, xp:60, boss:true, bossType:b, flying:!!b.flying,
+        speed:b.speed * mapSpdMul(), dmg:b.dmg * levelDmgMul * mapDmgMul(), xp:60, boss:true, bossType:b, flying:!!b.flying,
         hit:0, score:100, faceDir:'down', animTime:0, bob:Math.random()*TAU,
-        bossAbilityTimer: 2, bossCharging:false, chargeVx:0, chargeVy:0, chargeDur:0 });
-      milestonePopups.push({ text:b.name, t:2.5, y:0 });
-      Audio2.boss(); juice(9, 0);
+        bossAbilityTimer: 2, bossCharging:false, chargeVx:0, chargeVy:0, chargeDur:0,
+        spawnAnim: 1.5 });
+      milestonePopups.push({ text:b.name, t:3.5, y:0, boss:true, color:b.color });
+      particles.push({ x, y, ring:true, r:10, maxR:120, t:0.6, c:b.color || '#d02c6a' });
+      particles.push({ x, y, ring:true, r:5, maxR:80, t:0.45, c:'#ffffff' });
+      for (let i = 0; i < 20; i++) {
+        const pa = TAU * i / 20;
+        particles.push({ x, y, vx:Math.cos(pa)*rand(60,140), vy:Math.sin(pa)*rand(60,140), t:0.5+rand(0,0.3), c:i%3===0?'#ffffff':(b.color||'#d02c6a'), r:rand(2,5) });
+      }
+      Audio2.tone(60, 0.6, 'sawtooth', 0.3, 35);
+      Audio2.tone(120, 0.3, 'square', 0.15, 200);
+      setTimeout(() => { Audio2.tone(80, 0.4, 'triangle', 0.25, 50); }, 200);
+      juice(14, 0.08);
       return;
     }
     const t = pickEnemyType(currentMap);
     const hpScale = 1 + difficulty * 0.14;
-    enemies.push({ x, y, r:t.r, hp:t.hp*hpScale*levelHpMul, maxHp:t.hp*hpScale*levelHpMul, speed:t.speed*(1+difficulty*0.01),
-      dmg:t.dmg * levelDmgMul, xp:t.xp, mrow:t.mrow, hit:0, score:t.score, faceDir:'down', animTime:0,
+    const mhp = t.hp * hpScale * levelHpMul * mapHpMul();
+    enemies.push({ x, y, r:t.r, hp:mhp, maxHp:mhp, speed:t.speed*(1+difficulty*0.01)*mapSpdMul(),
+      dmg:t.dmg * levelDmgMul * mapDmgMul(), xp:t.xp, mrow:t.mrow, hit:0, score:t.score, faceDir:'down', animTime:0,
       hue: Math.floor(Math.random() * 360),
       flying:!!t.flying, bob:Math.random()*TAU,
       ranged:!!t.ranged, projSpeed:t.projSpeed, projDmg:t.projDmg, fireCd:t.fireCd, range:t.range,
@@ -1901,9 +2013,9 @@
     } else {
       const lk = player.luckMul || 1;
       const r = Math.random();
-      if (r < 0.004 * lk) orbs.push({ x:e.x, y:e.y, type:'bomb', r:10, t:15 });
-      else if (r < 0.014 * lk) orbs.push({ x:e.x, y:e.y, type:'loot', r:11, t:18 });
-      else if (r < 0.035 * lk) orbs.push({ x:e.x, y:e.y, type:'heal', r:14, t:15 });
+      if (r < 0.002 * lk) orbs.push({ x:e.x, y:e.y, type:'bomb', r:10, t:15 });
+      else if (r < 0.007 * lk) orbs.push({ x:e.x, y:e.y, type:'loot', r:11, t:18 });
+      else if (r < 0.018 * lk) orbs.push({ x:e.x, y:e.y, type:'heal', r:14, t:15 });
     }
   }
 
@@ -2105,10 +2217,33 @@
         for (let i = 0; i < count && i < targets.length; i++) {
           const e = targets[i].e;
           damageEnemy(e, (10 + up.lstrike.lvl * 5) * player.dmg, 0, 0, true);
-          particles.push({ x:e.x, y:e.y - 40, vx:0, vy:40, t:0.2, c:'#f7e14a', r:4 });
-          particles.push({ x:e.x, y:e.y, ring:true, r:4, maxR:30, t:0.25, c:'#f7e14a' });
+          const segs = [];
+          let bx = e.x + rand(-10, 10), by = e.y - 320;
+          for (let s = 0; s < 8; s++) {
+            const nx = bx + rand(-22, 22), ny = by + 40 + rand(-5, 5);
+            segs.push({ x1: bx, y1: by, x2: nx, y2: ny });
+            bx = nx; by = ny;
+          }
+          segs.push({ x1: bx, y1: by, x2: e.x, y2: e.y });
+          if (Math.random() < 0.5) {
+            const si = Math.floor(rand(2, 5));
+            const sp = segs[si];
+            let fx = sp.x2, fy = sp.y2;
+            for (let b = 0; b < 3; b++) {
+              const nx = fx + rand(-30, 30), ny = fy + rand(15, 35);
+              segs.push({ x1: fx, y1: fy, x2: nx, y2: ny, branch: true });
+              fx = nx; fy = ny;
+            }
+          }
+          lightningBolts.push({ segs, t: 0.35, x: e.x, y: e.y });
+          particles.push({ x:e.x, y:e.y, ring:true, r:6, maxR:50, t:0.3, c:'#f7e14a' });
+          particles.push({ x:e.x, y:e.y, ring:true, r:4, maxR:35, t:0.2, c:'#ffffff' });
+          for (let s = 0; s < 6; s++) {
+            const sa = TAU * s / 6 + rand(-0.3, 0.3);
+            particles.push({ x:e.x, y:e.y, vx:Math.cos(sa)*rand(40,100), vy:Math.sin(sa)*rand(40,100), t:0.2+rand(0,0.15), c:s%2===0?'#f7e14a':'#ffffff', r:rand(1.5,3) });
+          }
         }
-        if (targets.length > 0) Audio2.tone(800, 0.08, 'square', 0.12, 200);
+        if (targets.length > 0) { Audio2.tone(900, 0.1, 'square', 0.14, 200); Audio2.noise(0.06, 0.15, 3000); }
       }
     }
 
@@ -2248,7 +2383,9 @@
   let orbitAngle = 0;
   function update(dt) {
     gameTime += dt;
-    difficulty = gameTime / 33; // ramps over time
+    const levelTime = 600;
+    if (gameTime >= levelTime) { victory(); return; }
+    difficulty = gameTime / (currentMap === 5 ? 22 : 33);
     if (shake > 0) shake = Math.max(0, shake - dt * 80);
     // regen + lifesteal pool refill (cap: 3 HP/s max from lifesteal)
     if (player.regen) player.hp = Math.min(player.maxHp, player.hp + player.regen*dt);
@@ -2294,23 +2431,27 @@
     // Meteor impacts decay
     for (const m of meteorImpacts) m.t -= dt;
     meteorImpacts = meteorImpacts.filter(m => m.t > 0);
+    for (const lb of lightningBolts) lb.t -= dt;
+    lightningBolts = lightningBolts.filter(lb => lb.t > 0);
 
     // Camera follows
     camX = player.x - W/2; camY = player.y - H/2;
 
     // Spawning
     spawnTimer -= dt;
-    const maxEnemies = 200;
+    const maxEnemies = 120;
     const earlyBoost = gameTime < 30 ? 0.25 : 0;
-    const spawnRate = clamp(0.9 - difficulty*0.05 - earlyBoost, 0.15, 0.9);
+    const spawnFloor = currentMap === 5 ? 0.10 : 0.15;
+    const spawnRate = clamp(0.9 - difficulty*0.05 - earlyBoost, spawnFloor, 0.9);
     if (spawnTimer <= 0 && enemies.length < maxEnemies) {
       spawnTimer = spawnRate;
       const batch = Math.min(1 + Math.floor(difficulty*0.4) + (gameTime < 30 ? 1 : 0), 6);
       for (let i=0;i<batch;i++) { if (enemies.length < maxEnemies) spawnEnemy(false); }
     }
-    // Boss every 60s
-    if (gameTime - lastBossTime > 60) { lastBossTime = gameTime; spawnEnemy(true); }
+    const bossInterval = currentMap === 5 ? 45 : 60;
+    if (gameTime - lastBossTime > bossInterval) { lastBossTime = gameTime; spawnEnemy(true); }
 
+    updateFocusTarget();
     updateWeapons(dt);
 
     // Update enemies
@@ -2322,17 +2463,30 @@
       if (e.slow) e.slow -= dt;
       if (e.ranged && d < e.range * 0.6) sp = 0; // casters hold their ground and fire
       const vx = Math.cos(a) * sp * dt, vy = Math.sin(a) * sp * dt;
-      // Enemies ignore solid objects (they swarm through) but respect water.
+      const ox = e.x, oy = e.y;
       if (e.flying || circleBlocked(e.x, e.y, e.r, true)) {
         e.x += vx; e.y += vy;
       } else {
         if (!circleBlocked(e.x + vx, e.y, e.r, true)) e.x += vx;
         if (!circleBlocked(e.x, e.y + vy, e.r, true)) e.y += vy;
       }
+      const moved = (e.x - ox) * (e.x - ox) + (e.y - oy) * (e.y - oy);
+      if (sp > 0 && moved < 0.01) {
+        e.stuckTime = (e.stuckTime || 0) + dt;
+        if (e.stuckTime > 1.0) {
+          const esc = Math.atan2(player.y - e.y, player.x - e.x) + (Math.random() - 0.5) * 1.5;
+          const push = 40 + Math.random() * 30;
+          const nx = e.x + Math.cos(esc) * push, ny = e.y + Math.sin(esc) * push;
+          if (!circleBlocked(nx, ny, e.r, true)) { e.x = nx; e.y = ny; }
+          else { e.x += Math.cos(esc) * push; e.y += Math.sin(esc) * push; }
+          e.stuckTime = 0;
+        }
+      } else { e.stuckTime = 0; }
       e.faceDir = faceFromVec(dxp, dyp);
       e.animTime += dt;
       if (e.flying) e.bob += dt * 4;
       if (e.hit > 0) e.hit -= dt;
+      if (e.spawnAnim > 0) e.spawnAnim -= dt;
       // ranged attack
       if (e.ranged) {
         e.fireTimer -= dt;
@@ -2462,11 +2616,12 @@
             Audio2.tone(200, 0.2, 'sine', 0.15, 400);
             for (let i = 0; i < 16; i++) { const pa = TAU*i/16; particles.push({ x:e.x, y:e.y, vx:Math.cos(pa)*120, vy:Math.sin(pa)*120, t:0.4, c:'#6030a0', r:3 }); }
           } else if (bt.ability === 'blizzard') {
-            e.blizzardActive = bt.blizzardDur;
+            e.blizzardWarn = 1.2;
+            e.blizzardActive = 0;
             e.blizzardMax = bt.blizzardRadius;
-            e.blizzardR = 30;
+            e.blizzardR = 0;
             e.blizzardCenter = { x:player.x, y:player.y };
-            e.bossAbilityTimer = bt.blizzardCd;
+            e.bossAbilityTimer = bt.blizzardCd + 1.2;
             Audio2.tone(500, 0.25, 'sine', 0.15, 200);
           } else if (bt.ability === 'warp') {
             const wa = Math.random() * TAU;
@@ -2599,10 +2754,18 @@
           e.mirrors = e.mirrors.filter(m => m.t > 0);
           if (e.mirrors.length === 0) e.mirrors = undefined;
         }
-        // Blizzard — expanding ice ring
+        // Blizzard — warning then expanding ice ring
+        if (e.blizzardWarn > 0) {
+          e.blizzardWarn -= dt;
+          if (e.blizzardWarn <= 0) {
+            e.blizzardActive = e.bossType.blizzardDur;
+            e.blizzardR = 30;
+            Audio2.tone(300, 0.3, 'sawtooth', 0.2, 80);
+          }
+        }
         if (e.blizzardActive > 0) {
           e.blizzardActive -= dt;
-          e.blizzardR = Math.min(e.blizzardR + dt * 80, e.blizzardMax);
+          e.blizzardR = Math.min(e.blizzardR + dt * 50, e.blizzardMax);
           const bc = e.blizzardCenter;
           const bd = Math.hypot(player.x - bc.x, player.y - bc.y);
           if (bd < e.blizzardR) {
@@ -2677,10 +2840,11 @@
         }
       }
     }
-    // separate overlapping enemies (cheap)
-    for (let i=0;i<enemies.length;i++) {
+    // separate overlapping enemies (only nearby ones)
+    const sepLen = Math.min(enemies.length, 60);
+    for (let i=0;i<sepLen;i++) {
       const a = enemies[i];
-      for (let j=i+1;j<enemies.length;j++) {
+      for (let j=i+1;j<sepLen;j++) {
         const b = enemies[j];
         const dx=b.x-a.x, dy=b.y-a.y, rr=a.r+b.r;
         const d2=dx*dx+dy*dy;
@@ -2712,6 +2876,7 @@
       }
     }
     enemyShots = enemyShots.filter(s => s.life > 0);
+    if (enemyShots.length > 80) enemyShots.splice(0, enemyShots.length - 80);
 
     // Flame aura — periodic damage + slow (no knockback, so it can't wall foes out)
     if (up.garlic.lvl > 0) {
@@ -2963,6 +3128,7 @@
       if (d2v < (player.r+g.r)*(player.r+g.r)) { g.got = true; let gv = g.v * player.cashMul; if (player.metaGoldRush && Math.random() < player.metaGoldRush) gv *= 2; gainXp(gv); runGold += Math.ceil(gv); Audio2.pickup(); }
     }
     gems = gems.filter(g => !g.got);
+    if (gems.length > 150) gems.splice(0, gems.length - 150);
 
     // Orbs (heal/bomb)
     for (const o of orbs) {
@@ -2990,6 +3156,7 @@
       else { p.x += p.vx*dt; p.y += p.vy*dt; p.vx*=0.92; p.vy*=0.92; }
     }
     particles = particles.filter(p => p.t > 0);
+    if (particles.length > 300) particles.splice(0, particles.length - 300);
     for (const d of damageTexts) { d.t -= dt; d.y -= 30*dt; }
     damageTexts = damageTexts.filter(d => d.t > 0);
     if (dmgVignette > 0) dmgVignette -= dt;
@@ -3080,6 +3247,31 @@
       if (e.hue) ctx.filter = 'none';
     }
     if (e.boss) {
+      if (e.spawnAnim > 0) {
+        const sp = e.spawnAnim / 1.5;
+        const bc2 = e.bossType.color || '#d02c6a';
+        ctx.save();
+        const sr = 60 + (1 - sp) * 50;
+        const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
+        sg.addColorStop(0, bc2);
+        sg.addColorStop(0.4, bc2 + '80');
+        sg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = sp * 0.6;
+        ctx.fillStyle = sg;
+        ctx.fillRect(sx - sr, sy - sr, sr * 2, sr * 2);
+        ctx.strokeStyle = bc2; ctx.lineWidth = 3; ctx.globalAlpha = sp * 0.8;
+        ctx.beginPath(); ctx.arc(sx, sy, sr * 0.8, 0, TAU); ctx.stroke();
+        ctx.beginPath(); ctx.arc(sx, sy, sr * 0.5, 0, TAU); ctx.stroke();
+        const pillars = 6;
+        ctx.globalAlpha = sp * 0.5;
+        for (let i = 0; i < pillars; i++) {
+          const pa = TAU * i / pillars + gameTime * 2;
+          const pr = sr * 0.7;
+          ctx.fillStyle = bc2;
+          ctx.beginPath(); ctx.arc(sx + Math.cos(pa) * pr, sy + Math.sin(pa) * pr, 3 + sp * 3, 0, TAU); ctx.fill();
+        }
+        ctx.restore();
+      }
       ctx.imageSmoothingEnabled = true;
       const bc = e.bossType.color || '#d02c6a';
       const pulse = 0.5 + 0.5 * Math.sin(gameTime * 3);
@@ -3236,17 +3428,60 @@
     // Ice walls
     for (const w of iceWalls) {
       const sx = w.x - camX, sy = w.y - camY;
-      const alpha = Math.min(w.t / 0.5, 1) * 0.7;
+      const alpha = Math.min(w.t / 0.5, 1) * 0.85;
+      const hl = w.len / 2;
       ctx.save();
       ctx.translate(sx, sy);
       ctx.rotate(w.angle);
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = '#8ad8ff';
-      ctx.shadowColor = '#4aa8ff'; ctx.shadowBlur = 10;
-      ctx.beginPath(); ctx.roundRect(-w.len/2, -8, w.len, 16, 6); ctx.fill();
-      ctx.fillStyle = '#c8f0ff';
-      ctx.beginPath(); ctx.roundRect(-w.len/2 + 4, -4, w.len - 8, 8, 3); ctx.fill();
+      ctx.shadowColor = '#60c0ff'; ctx.shadowBlur = 18;
+      const bg = ctx.createLinearGradient(-hl, -12, -hl, 12);
+      bg.addColorStop(0, 'rgba(160,230,255,0.3)');
+      bg.addColorStop(0.5, 'rgba(100,200,255,0.6)');
+      bg.addColorStop(1, 'rgba(60,160,240,0.3)');
+      ctx.fillStyle = bg;
+      ctx.beginPath(); ctx.roundRect(-hl, -10, w.len, 20, 6); ctx.fill();
+      const spikeCount = Math.floor(w.len / 14);
+      for (let i = 0; i < spikeCount; i++) {
+        const bx = -hl + 7 + i * (w.len - 14) / (spikeCount - 1);
+        const sH = 12 + Math.sin(i * 2.3 + 0.5) * 8 + Math.sin(gameTime * 3 + i) * 2;
+        const sW = 5 + Math.sin(i * 1.7) * 2;
+        const sg = ctx.createLinearGradient(bx, 0, bx, -sH);
+        sg.addColorStop(0, 'rgba(120,210,255,0.7)');
+        sg.addColorStop(0.6, 'rgba(180,240,255,0.5)');
+        sg.addColorStop(1, 'rgba(220,250,255,0.2)');
+        ctx.fillStyle = sg;
+        ctx.beginPath();
+        ctx.moveTo(bx - sW, 0);
+        ctx.lineTo(bx - 1, -sH);
+        ctx.lineTo(bx + 1, -sH);
+        ctx.lineTo(bx + sW, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(200,240,255,0.5)'; ctx.lineWidth = 0.8;
+        ctx.stroke();
+        if (i % 3 === 0) {
+          const dsH = 6 + Math.cos(i * 3.1) * 3;
+          ctx.fillStyle = 'rgba(140,220,255,0.4)';
+          ctx.beginPath();
+          ctx.moveTo(bx - sW * 0.7, 0);
+          ctx.lineTo(bx, dsH);
+          ctx.lineTo(bx + sW * 0.7, 0);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+      ctx.fillStyle = 'rgba(220,245,255,0.5)';
+      ctx.beginPath(); ctx.roundRect(-hl + 3, -3, w.len - 6, 6, 3); ctx.fill();
+      const shimmer = Math.sin(gameTime * 6) * 0.3 + 0.3;
+      ctx.globalAlpha = alpha * shimmer;
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 5; i++) {
+        const gx = -hl + 10 + ((gameTime * 40 + i * w.len / 5) % w.len);
+        ctx.beginPath(); ctx.arc(gx, -2 + Math.sin(gameTime * 4 + i * 2) * 3, 1.5 + Math.sin(gameTime * 5 + i) * 0.5, 0, TAU); ctx.fill();
+      }
       ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
       ctx.restore();
     }
 
@@ -3299,15 +3534,16 @@
       // Shockwave windup warning circle
       if (e.boss && e.swCharging > 0) {
         const sx = e.x - camX, sy = e.y - camY;
-        const prog = 1 - e.swCharging / 0.35;
+        const prog = 1 - e.swCharging / 1.25;
         const pulse = 0.5 + 0.5 * Math.sin(gameTime * 14);
         ctx.save();
+        const r = Math.max(0, e.swRadius * prog);
         ctx.strokeStyle = `rgba(255,80,40,${(0.4 + pulse * 0.4) * prog})`; ctx.lineWidth = 3;
         ctx.setLineDash([6, 4]);
-        ctx.beginPath(); ctx.arc(sx, sy, e.swRadius * prog, 0, TAU); ctx.stroke();
+        ctx.beginPath(); ctx.arc(sx, sy, r, 0, TAU); ctx.stroke();
         ctx.setLineDash([]);
         ctx.fillStyle = `rgba(255,60,20,${0.08 * prog})`;
-        ctx.beginPath(); ctx.arc(sx, sy, e.swRadius * prog, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(sx, sy, r, 0, TAU); ctx.fill();
         ctx.restore();
       }
       // Divebomb windup warning circle at target
@@ -3440,22 +3676,42 @@
       }
     }
 
-    // Boss blizzard effect
+    // Boss blizzard warning + effect
     for (const e of enemies) {
+      if (e.boss && e.blizzardWarn > 0) {
+        const bc = e.blizzardCenter;
+        const bx = bc.x - camX, by = bc.y - camY;
+        const urgency = 1 - e.blizzardWarn / 1.2;
+        const pulse = 0.6 + 0.4 * Math.sin(gameTime * 10 + urgency * 6);
+        ctx.save();
+        const wg = ctx.createRadialGradient(bx, by, 0, bx, by, e.blizzardMax);
+        wg.addColorStop(0, `rgba(100,200,255,${(0.15 + urgency * 0.15) * pulse})`);
+        wg.addColorStop(0.7, `rgba(80,180,255,${(0.08 + urgency * 0.08) * pulse})`);
+        wg.addColorStop(1, 'rgba(60,160,255,0)');
+        ctx.fillStyle = wg;
+        ctx.beginPath(); ctx.arc(bx, by, e.blizzardMax, 0, TAU); ctx.fill();
+        ctx.strokeStyle = `rgba(140,220,255,${(0.4 + urgency * 0.5) * pulse})`; ctx.lineWidth = 2 + urgency * 2;
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath(); ctx.arc(bx, by, e.blizzardMax, 0, TAU); ctx.stroke();
+        ctx.setLineDash([]);
+        if (urgency > 0.3) {
+          ctx.strokeStyle = `rgba(200,240,255,${(urgency - 0.3) * 0.5 * pulse})`; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(bx, by, e.blizzardMax * (0.4 + urgency * 0.4), 0, TAU); ctx.stroke();
+        }
+        ctx.restore();
+      }
       if (e.boss && e.blizzardActive > 0) {
         const bc = e.blizzardCenter;
         const bx = bc.x - camX, by = bc.y - camY;
         const ba = Math.min(e.blizzardActive / 0.5, 1) * 0.5;
         ctx.save();
         ctx.shadowColor = '#80e0ff'; ctx.shadowBlur = 20;
-        // Ice ring
         const grd = ctx.createRadialGradient(bx, by, e.blizzardR * 0.3, bx, by, e.blizzardR);
         grd.addColorStop(0, `rgba(128,224,255,${ba * 0.15})`);
         grd.addColorStop(0.7, `rgba(100,200,255,${ba * 0.3})`);
         grd.addColorStop(1, 'rgba(60,160,255,0)');
         ctx.fillStyle = grd;
         ctx.beginPath(); ctx.arc(bx, by, e.blizzardR, 0, TAU); ctx.fill();
-        // Spinning ice particles
         ctx.strokeStyle = `rgba(180,240,255,${ba * 0.7})`; ctx.lineWidth = 2;
         for (let i = 0; i < 12; i++) {
           const ia = gameTime * 2 + i * TAU / 12;
@@ -3513,13 +3769,22 @@
     // Boss fire pillars
     for (const p of bossFirePillars) {
       if (p.delay > 0) {
-        // Telegraph — warning circle before pillar appears
         const px2 = p.x - camX, py2 = p.y - camY;
-        const wa = 0.5 + 0.5 * Math.sin(gameTime * 10);
+        const urgency = 1 - p.delay / 1.37;
+        const pulse = 0.6 + 0.4 * Math.sin(gameTime * 12 + urgency * 6);
         ctx.save();
-        ctx.strokeStyle = `rgba(255,60,30,${wa * 0.6})`; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+        const wg = ctx.createRadialGradient(px2, py2, 0, px2, py2, p.r);
+        wg.addColorStop(0, `rgba(255,40,10,${(0.25 + urgency * 0.2) * pulse})`);
+        wg.addColorStop(0.7, `rgba(255,60,20,${(0.12 + urgency * 0.1) * pulse})`);
+        wg.addColorStop(1, 'rgba(255,40,10,0)');
+        ctx.fillStyle = wg;
+        ctx.beginPath(); ctx.arc(px2, py2, p.r, 0, TAU); ctx.fill();
+        ctx.strokeStyle = `rgba(255,80,30,${(0.5 + urgency * 0.4) * pulse})`; ctx.lineWidth = 2 + urgency * 2;
         ctx.beginPath(); ctx.arc(px2, py2, p.r, 0, TAU); ctx.stroke();
-        ctx.setLineDash([]);
+        if (urgency > 0.3) {
+          ctx.strokeStyle = `rgba(255,180,60,${(urgency - 0.3) * 0.6 * pulse})`; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(px2, py2, p.r * (0.5 + urgency * 0.3), 0, TAU); ctx.stroke();
+        }
         ctx.restore();
         continue;
       }
@@ -3814,7 +4079,8 @@
       }
     }
     for (const e of enemies) {
-      const sx = e.x - camX; if (sx < -100 || sx > W+100) continue;
+      const sx = e.x - camX, sy = e.y - camY;
+      if (sx < -100 || sx > W+100 || sy < -100 || sy > H+100) continue;
       dl.push({ y: e.y + e.r, t:1, e });
     }
     for (const de of dyingEnemies) dl.push({ y: de.y + de.r, t:3, de });
@@ -3943,9 +4209,49 @@
       ctx.restore();
     }
 
+    // lightning bolts
+    for (const lb of lightningBolts) {
+      const alpha = clamp(lb.t / 0.15, 0, 1);
+      const flicker = Math.random() > 0.3 ? 1 : 0.4;
+      ctx.save();
+      ctx.globalAlpha = alpha * flicker;
+      ctx.shadowColor = '#80c0ff'; ctx.shadowBlur = 20;
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (const s of lb.segs) {
+        if (s.branch) continue;
+        ctx.moveTo(s.x1 - camX, s.y1 - camY);
+        ctx.lineTo(s.x2 - camX, s.y2 - camY);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = '#a0d4ff'; ctx.lineWidth = 6; ctx.globalAlpha = alpha * flicker * 0.4;
+      ctx.stroke();
+      ctx.strokeStyle = '#f0f8ff'; ctx.lineWidth = 1.5; ctx.globalAlpha = alpha * flicker;
+      ctx.beginPath();
+      for (const s of lb.segs) {
+        if (s.branch) {
+          ctx.moveTo(s.x1 - camX, s.y1 - camY);
+          ctx.lineTo(s.x2 - camX, s.y2 - camY);
+        }
+      }
+      ctx.stroke();
+      if (lb.t > 0.25) {
+        const fx = lb.x - camX, fy = lb.y - camY;
+        const fg = ctx.createRadialGradient(fx, fy, 0, fx, fy, 60);
+        fg.addColorStop(0, 'rgba(200,230,255,0.5)');
+        fg.addColorStop(0.4, 'rgba(120,180,255,0.2)');
+        fg.addColorStop(1, 'rgba(80,140,255,0)');
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = fg; ctx.fillRect(fx - 60, fy - 60, 120, 120);
+      }
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
     // particles
     for (const p of particles) {
       const sx=p.x-camX, sy=p.y-camY;
+      if (sx < -50 || sx > W+50 || sy < -50 || sy > H+50) continue;
       if (p.ring) {
         ctx.strokeStyle = p.c; ctx.globalAlpha = clamp(p.t*2.5,0,1); ctx.lineWidth=3;
         ctx.beginPath(); ctx.arc(sx,sy,p.r,0,TAU); ctx.stroke(); ctx.globalAlpha=1;
@@ -3975,31 +4281,44 @@
     for (const e of enemies) {
       if (!e.boss || e.dead) continue;
       const sx = e.x - camX, sy = e.y - camY;
-      if (sx > -40 && sx < W + 40 && sy > -40 && sy < H + 40) continue;
+      if (sx > -20 && sx < W + 20 && sy > -20 && sy < H + 20) continue;
       const cx = W / 2, cy = H / 2;
       const ang = Math.atan2(sy - cy, sx - cx);
-      const margin = 36;
+      const margin = 50;
+      const hw = W / 2 - margin, hh = H / 2 - margin;
       const cosA = Math.cos(ang), sinA = Math.sin(ang);
-      const edgeX = clamp(cx + cosA * W, margin, W - margin);
-      const edgeY = clamp(cy + sinA * H, margin, H - margin);
+      const scale = Math.min(Math.abs(cosA) > 0.001 ? hw / Math.abs(cosA) : 9999, Math.abs(sinA) > 0.001 ? hh / Math.abs(sinA) : 9999);
+      const edgeX = cx + cosA * scale, edgeY = cy + sinA * scale;
       const bCol = e.bossType.color || '#d02c6a';
-      const pulse = 0.7 + 0.3 * Math.sin(gameTime * 4);
+      const pulse = 0.7 + 0.3 * Math.sin(gameTime * 5);
+      const dd = Math.sqrt((sx - cx) * (sx - cx) + (sy - cy) * (sy - cy));
+      const sizeMul = clamp(2.0 - dd / 800, 1.0, 2.0);
       ctx.save();
       ctx.translate(edgeX, edgeY);
       ctx.rotate(ang);
       ctx.globalAlpha = pulse;
+      ctx.shadowColor = bCol; ctx.shadowBlur = 16;
       ctx.fillStyle = bCol;
       ctx.strokeStyle = '#000';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
+      const s = 22 * sizeMul;
       ctx.beginPath();
-      ctx.moveTo(14, 0);
-      ctx.lineTo(-8, -10);
-      ctx.lineTo(-4, 0);
-      ctx.lineTo(-8, 10);
+      ctx.moveTo(s, 0);
+      ctx.lineTo(-s * 0.6, -s * 0.7);
+      ctx.lineTo(-s * 0.25, 0);
+      ctx.lineTo(-s * 0.6, s * 0.7);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+      ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
+      ctx.rotate(-ang);
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+      ctx.strokeText(e.bossType.name, 0, s * 0.8 + 2);
+      ctx.fillStyle = bCol;
+      ctx.fillText(e.bossType.name, 0, s * 0.8 + 2);
       ctx.restore();
     }
 
@@ -4033,7 +4352,8 @@
     if (milestonePopups.length) {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       for (const m of milestonePopups) {
-        const age = 2.5 - m.t;
+        const maxT = m.boss ? 3.5 : 2.5;
+        const age = maxT - m.t;
         const slideY = H * 0.32 - Math.min(age * 120, 30);
         const alpha = m.t < 0.5 ? m.t * 2 : (age < 0.3 ? age / 0.3 : 1);
         const sc = age < 0.15 ? 0.6 + age / 0.15 * 0.4 : 1;
@@ -4041,11 +4361,29 @@
         ctx.translate(W/2, slideY);
         ctx.scale(sc, sc);
         ctx.globalAlpha = clamp(alpha, 0, 1);
-        ctx.font = 'bold 28px sans-serif';
-        ctx.strokeStyle = '#000'; ctx.lineWidth = 5;
-        ctx.strokeText(m.text, 0, 0);
-        ctx.fillStyle = '#f0c040';
-        ctx.fillText(m.text, 0, 0);
+        if (m.boss) {
+          const bCol = m.color || '#d02c6a';
+          ctx.shadowColor = bCol; ctx.shadowBlur = 25;
+          ctx.font = 'bold 14px sans-serif';
+          ctx.strokeStyle = '#000'; ctx.lineWidth = 4;
+          ctx.strokeText('-- BOSS APPROACHING --', 0, -28);
+          ctx.fillStyle = '#ff6060';
+          ctx.fillText('-- BOSS APPROACHING --', 0, -28);
+          ctx.font = 'bold 36px sans-serif';
+          ctx.strokeStyle = '#000'; ctx.lineWidth = 6;
+          ctx.strokeText(m.text, 0, 0);
+          ctx.fillStyle = bCol;
+          ctx.fillText(m.text, 0, 0);
+          ctx.fillStyle = '#ffffff'; ctx.globalAlpha = clamp(alpha, 0, 1) * (0.3 + 0.2 * Math.sin(gameTime * 8));
+          ctx.fillText(m.text, 0, 0);
+          ctx.shadowBlur = 0;
+        } else {
+          ctx.font = 'bold 28px sans-serif';
+          ctx.strokeStyle = '#000'; ctx.lineWidth = 5;
+          ctx.strokeText(m.text, 0, 0);
+          ctx.fillStyle = '#f0c040';
+          ctx.fillText(m.text, 0, 0);
+        }
         ctx.restore();
       }
       ctx.globalAlpha = 1;
@@ -4127,7 +4465,40 @@
 
   // ---- Game over ------------------------------------------------------
   let score = 0, revivedThisRun = false;
+  function victory() {
+    state = 'dead';
+    CG.gameplayStop();
+    Audio2.stopMusic();
+    [523,659,784,988,1047].forEach((f,i)=>setTimeout(()=>Audio2.tone(f,0.2,'triangle',0.22),i*100));
+    score = liveScore() + 1000;
+    const isBest = score > hiScore;
+    if (isBest) { hiScore = score; CG.setItem(HI_KEY, String(hiScore)); refreshHiScore(); }
+    runGold = Math.floor(runGold * 1.5);
+    runGold += player.metaSurplus || 0;
+    metaGold += runGold;
+    saveShopData();
+    refreshGoldDisplay();
+    const avgDps = gameTime > 0 ? Math.round(totalDmgDealt / gameTime) : 0;
+    const dmgStr = totalDmgDealt >= 1000 ? (totalDmgDealt/1000).toFixed(1) + 'k' : Math.round(totalDmgDealt);
+    let weaponList = '';
+    for (const k of Object.keys(up)) {
+      const u = up[k]; if (u.kind === 'weapon' && u.lvl > 0) weaponList += `${u.ic}Lv${u.lvl} `;
+    }
+    document.getElementById('goTitle').textContent = 'VICTORY!';
+    document.getElementById('finalStats').innerHTML =
+      `Survived <b>10:00</b> — Level Complete!<br>
+       Level <b>${level}</b> &nbsp;·&nbsp; Enemies <b>${kills}</b><br>
+       Total Damage <b>${dmgStr}</b> &nbsp;·&nbsp; Avg DPS <b>${avgDps}</b><br>
+       ${weaponList ? 'Weapons: ' + weaponList + '<br>' : ''}
+       <span class="gold-earned">+${runGold} gold earned (1.5x victory bonus!)</span><br>
+       Score <b>${score}</b> (includes +1000 victory bonus)${isBest ? ' &nbsp;🏆 NEW BEST!' : ''}<br>
+       <span style="color:#8a93a8;font-size:14px">Best: ${hiScore}</span>`;
+    document.getElementById('reviveBtn').classList.add('hidden');
+    hide('hud'); show('gameover');
+  }
+
   function gameOver() {
+    document.getElementById('goTitle').textContent = 'BURNED OUT';
     state = 'dead';
     CG.gameplayStop();
     Audio2.stopMusic(); Audio2.over();
@@ -4183,14 +4554,18 @@
   // ---- Loop -----------------------------------------------------------
   let last = performance.now();
   function loop(now) {
-    let dt = (now - last) / 1000; last = now;
-    dt = Math.min(dt, 0.05); // clamp to avoid tunneling on lag
-    if (state === 'playing') {
-      if (hitStop > 0) hitStop -= dt;
-      else update(dt);
+    try {
+      let dt = (now - last) / 1000; last = now;
+      dt = Math.min(dt, 0.05);
+      if (state === 'playing') {
+        if (hitStop > 0) hitStop -= dt;
+        else update(dt);
+      }
+      if (state === 'menu') drawMenuScene(dt);
+      else render();
+    } catch(err) {
+      console.error('Game loop error:', err);
     }
-    if (state === 'menu') drawMenuScene(dt);
-    else render();
     requestAnimationFrame(loop);
   }
 
@@ -4230,7 +4605,21 @@
     hide('menu');
     show('charSelect');
   };
+  let selectedMap = 0;
+  document.querySelectorAll('.map-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.map-btn').forEach(b => { b.classList.remove('selected'); b.style.borderColor = '#2a3350'; b.style.color = '#9aa8c0'; });
+      btn.classList.add('selected');
+      btn.style.borderColor = '#7ab6ff';
+      btn.style.color = '#e0e8ff';
+      selectedMap = parseInt(btn.dataset.map);
+    };
+  });
+  document.querySelectorAll('.map-btn')[0].style.borderColor = '#7ab6ff';
+  document.querySelectorAll('.map-btn')[0].style.color = '#e0e8ff';
+
   document.getElementById('charConfirm').onclick = () => {
+    currentMap = selectedMap === 0 ? 1 : 5;
     hide('charSelect');
     newRun();
   };
