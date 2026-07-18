@@ -308,7 +308,7 @@
     </div>
     <div class="hiscore" id="menuHi"></div>
     <div class="shop-gold" id="menuGold" style="margin-top:4px;font-size:15px;"></div>
-    <div class="credit" style="margin-top:10px;">Move to survive · Weapons auto-attack · Art from <a href="https://www.mirageonlineclassic.com" target="_blank" rel="noopener">Mirage Online Classic</a> · v0.10.0</div>
+    <div class="credit" style="margin-top:10px;">Move to survive · Weapons auto-attack · Art from <a href="https://www.mirageonlineclassic.com" target="_blank" rel="noopener">Mirage Online Classic</a> · v0.11.0</div>
   </div>
 </div>
 
@@ -795,6 +795,69 @@
     g.globalCompositeOperation = 'source-atop'; g.fillStyle = '#fff'; g.fillRect(0,0,c.width,c.height);
     return c;
   }
+  // Pre-rendered soft glow sprites — drawImage of a cached radial gradient is
+  // far cheaper than ctx.shadowBlur, which re-rasterizes the shape every fill.
+  const _glowCache = {};
+  function glowSprite(color) {
+    let c = _glowCache[color];
+    if (c) return c;
+    c = mkCanvas(64);
+    const g = c.getContext('2d');
+    let r = 255, gr2 = 255, b = 255;
+    if (color && color[0] === '#') {
+      let h = color.slice(1);
+      if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      const n = parseInt(h, 16);
+      r = (n>>16)&255; gr2 = (n>>8)&255; b = n&255;
+    }
+    const grad = g.createRadialGradient(32, 32, 2, 32, 32, 32);
+    grad.addColorStop(0, `rgba(${r},${gr2},${b},0.5)`);
+    grad.addColorStop(0.5, `rgba(${r},${gr2},${b},0.2)`);
+    grad.addColorStop(1, `rgba(${r},${gr2},${b},0)`);
+    g.fillStyle = grad; g.fillRect(0, 0, 64, 64);
+    _glowCache[color] = c;
+    return c;
+  }
+  // Hue-tinted monster sheets, baked once per 30-degree bucket. Replaces the
+  // per-enemy-per-frame ctx.filter='hue-rotate(...)' which forces a full
+  // filter pass on every sprite draw (the single biggest render cost).
+  const _hueSheets = {};
+  function monsterSheet(hue) {
+    if (!hue || !IMG.monsters) return IMG.monsters;
+    const bucket = Math.round(hue / 30) % 12;
+    if (bucket === 0) return IMG.monsters;
+    let c = _hueSheets[bucket];
+    if (!c) {
+      c = document.createElement('canvas');
+      c.width = IMG.monsters.width; c.height = IMG.monsters.height;
+      const g = c.getContext('2d');
+      if (g.filter === undefined) return IMG.monsters; // no filter support: skip tint
+      g.filter = 'hue-rotate(' + (bucket * 30) + 'deg)';
+      g.drawImage(IMG.monsters, 0, 0);
+      _hueSheets[bucket] = c;
+    }
+    return c;
+  }
+  // Darkened sheets for boss mirror images / shadow clones (baked once,
+  // replaces per-frame ctx.filter='brightness(...) saturate(0)').
+  let _monstersDark = null, _heroDark = null;
+  function darkSheet(img, brightness) {
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d');
+    if (g.filter === undefined) return img;
+    g.filter = 'brightness(' + brightness + ') saturate(0)';
+    g.drawImage(img, 0, 0);
+    return c;
+  }
+  function monstersDarkSheet() {
+    if (!_monstersDark && IMG.monsters) _monstersDark = darkSheet(IMG.monsters, 0.2);
+    return _monstersDark || IMG.monsters;
+  }
+  function heroDarkSheet() {
+    if (!_heroDark && IMG.hero) _heroDark = darkSheet(IMG.hero, 0.3);
+    return _heroDark || IMG.hero;
+  }
   // ---- Layered tile map (Mirage-style: ground + mask1 decor + objects) --
   // ground.png:  0 grass,1 red-flower,2 blue-flower,3 sand,4 stone,5 cobble,6 gravel,7 dungeon,8 wood,9 dark-floor
   // mask1.png:   0 bush,1 flowers,2 red-flowers,3 shrub,4 bones,5 dark-shrub
@@ -1081,7 +1144,20 @@
     return buildingClear(tx, ty, 4);
   }
 
+  // objAt is deterministic noise, but it's queried hundreds of times per frame
+  // (y-sort pass + collision checks for every grounded enemy) — memoize it.
+  const _objCache = new Map();
   function objAt(tx, ty) {
+    const k = tx + ',' + ty;
+    let v = _objCache.get(k);
+    if (v === undefined) {
+      if (_objCache.size > 40000) _objCache.clear();
+      v = computeObjAt(tx, ty);
+      _objCache.set(k, v);
+    }
+    return v;
+  }
+  function computeObjAt(tx, ty) {
     if (Math.abs(tx) <= 2 && Math.abs(ty) <= 2) return -1;
     if (isWaterCell(tx, ty) || isPathCell(tx, ty)) return -1;
     const bi = biomeAt(tx, ty), h = th(tx, ty, 3);
@@ -2457,12 +2533,12 @@
     // Update enemies
     for (const e of enemies) {
       const dxp = player.x - e.x, dyp = player.y - e.y;
-      const a = Math.atan2(dyp, dxp);
-      const d = Math.hypot(dxp, dyp);
+      const d = Math.hypot(dxp, dyp) || 1;
       let sp = e.speed * (e.slow ? 0.5 : 1);
       if (e.slow) e.slow -= dt;
       if (e.ranged && d < e.range * 0.6) sp = 0; // casters hold their ground and fire
-      const vx = Math.cos(a) * sp * dt, vy = Math.sin(a) * sp * dt;
+      const inv = sp * dt / d;
+      const vx = dxp * inv, vy = dyp * inv;
       const ox = e.x, oy = e.y;
       if (e.flying || circleBlocked(e.x, e.y, e.r, true)) {
         e.x += vx; e.y += vy;
@@ -2492,7 +2568,7 @@
         e.fireTimer -= dt;
         if (e.fireTimer <= 0 && d < e.range) {
           e.fireTimer = e.fireCd;
-          enemyShots.push({ x:e.x, y:e.y, vx:Math.cos(a)*e.projSpeed, vy:Math.sin(a)*e.projSpeed, r:6, dmg:e.projDmg, life:3.5, color:e.projColor });
+          enemyShots.push({ x:e.x, y:e.y, vx:dxp/d*e.projSpeed, vy:dyp/d*e.projSpeed, r:6, dmg:e.projDmg, life:3.5, color:e.projColor });
           Audio2.tone(300, 0.12, 'square', 0.05, 200);
         }
       }
@@ -2506,6 +2582,7 @@
           if (e.chargeDur <= 0) e.bossCharging = false;
         }
         if (e.bossAbilityTimer <= 0) {
+          const a = Math.atan2(dyp, dxp); // angle to player, for aimed abilities
           if (bt.ability === 'charge') {
             e.bossCharging = true;
             e.chargeVx = Math.cos(a) * bt.chargeSpeed;
@@ -3186,35 +3263,69 @@
 
   // ---- Rendering ------------------------------------------------------
   const GROUND_T = 64; // on-screen size of a tile (32px art @ 2x)
-  function drawGround() {
-    if (!IMG.ground) return; // background fill shows through until loaded
-    const T = GROUND_T;
-    const startTx = Math.floor(camX / T) - 1, startTy = Math.floor(camY / T) - 1;
-    const cols = Math.ceil(W / T) + 3, rows = Math.ceil(H / T) + 3;
-    const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
-    // Ground base + mask1 decor (both single-cell). Objects are drawn later,
-    // y-sorted with the actors so tree canopies can overlap the player (fringe).
-    for (let j = 0; j < rows; j++) {
-      for (let i = 0; i < cols; i++) {
-        const tx = startTx + i, ty = startTy + j;
-        const dx = tx*T - camX, dy = ty*T - camY;
+  // Ground is static per map, so bake it into chunk canvases (8x8 tiles) and
+  // blit ~9-12 chunks per frame instead of ~700 per-tile noise lookups +
+  // drawImage calls. Water shimmer is the only animated part; each chunk
+  // remembers its water cells so the shimmer overlay stays per-frame.
+  const CHUNK = 8;
+  const _chunkCache = new Map(); // 'cx,cy' -> { cv, water:[[dx,dy,tx,ty],...] }
+  function resetTerrainCaches() {
+    for (const k in _waterCache) delete _waterCache[k];
+    _objCache.clear();
+    _chunkCache.clear();
+  }
+  function bakeChunk(cx, cy) {
+    const T = GROUND_T, S = CHUNK * T;
+    const cv = document.createElement('canvas'); cv.width = S; cv.height = S;
+    const g = cv.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    const water = [];
+    for (let j = 0; j < CHUNK; j++) {
+      for (let i = 0; i < CHUNK; i++) {
+        const tx = cx*CHUNK + i, ty = cy*CHUNK + j;
+        const dx = i*T, dy = j*T;
         const bi = biomeAt(tx, ty);
-        ctx.drawImage(IMG.ground, groundIdx(bi,tx,ty)*32, 0, 32, 32, dx, dy, T, T);
+        g.drawImage(IMG.ground, groundIdx(bi,tx,ty)*32, 0, 32, 32, dx, dy, T, T);
         // Water autotile — overlays with grass-blended shore edges
         if (IMG.water && isWaterCell(tx, ty)) {
           const tiles = waterTile(tx, ty);
           for (let wt = 0; wt < tiles.length; wt++)
-            ctx.drawImage(IMG.water, tiles[wt][0], tiles[wt][1], 32, 32, dx, dy, T, T);
-          const shimmer = 0.04 + 0.03 * Math.sin(gameTime * 2.5 + tx * 1.7 + ty * 2.3);
-          ctx.fillStyle = `rgba(180,220,255,${shimmer})`;
-          ctx.fillRect(dx, dy, T, T);
+            g.drawImage(IMG.water, tiles[wt][0], tiles[wt][1], 32, 32, dx, dy, T, T);
+          water.push([dx, dy, tx, ty]);
         } else {
           if (IMG.paths && isPathCell(tx, ty)) {
             const pt = pathTile(tx, ty);
-            ctx.drawImage(IMG.paths, pt[0], pt[1], 32, 32, dx, dy, T, T);
+            g.drawImage(IMG.paths, pt[0], pt[1], 32, 32, dx, dy, T, T);
           }
           // mask1 decor (skipped on water so we don't get bones on water)
-          if (IMG.mask1) { const m = mask1Idx(bi,tx,ty); if (m >= 0) ctx.drawImage(IMG.mask1, m*32, 0, 32, 32, dx, dy, T, T); }
+          if (IMG.mask1) { const m = mask1Idx(bi,tx,ty); if (m >= 0) g.drawImage(IMG.mask1, m*32, 0, 32, 32, dx, dy, T, T); }
+        }
+      }
+    }
+    return { cv, water };
+  }
+  function drawGround() {
+    if (!IMG.ground) return; // background fill shows through until loaded
+    const T = GROUND_T, S = CHUNK * T;
+    const c0x = Math.floor((camX - T) / S), c0y = Math.floor((camY - T) / S);
+    const c1x = Math.floor((camX + W + T) / S), c1y = Math.floor((camY + H + T) / S);
+    const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
+    for (let cy = c0y; cy <= c1y; cy++) {
+      for (let cx = c0x; cx <= c1x; cx++) {
+        const key = cx + ',' + cy;
+        let ch = _chunkCache.get(key);
+        if (!ch) {
+          if (_chunkCache.size >= 36) { _chunkCache.delete(_chunkCache.keys().next().value); }
+          ch = bakeChunk(cx, cy);
+          _chunkCache.set(key, ch);
+        }
+        const px = cx*S - camX, py = cy*S - camY;
+        ctx.drawImage(ch.cv, px, py);
+        for (let wi = 0; wi < ch.water.length; wi++) {
+          const wc = ch.water[wi];
+          const shimmer = 0.04 + 0.03 * Math.sin(gameTime * 2.5 + wc[2] * 1.7 + wc[3] * 2.3);
+          ctx.fillStyle = `rgba(180,220,255,${shimmer})`;
+          ctx.fillRect(px + wc[0], py + wc[1], T, T);
         }
       }
     }
@@ -3241,10 +3352,9 @@
     ctx.imageSmoothingEnabled = false;
     if (IMG.monsters) {
       const col = DIRCOL[e.faceDir] + (Math.floor(e.animTime*7) % 2);
-      const sheet = (e.hit > 0 && IMG.monstersW) ? IMG.monstersW : IMG.monsters;
-      if (e.hue) ctx.filter = 'hue-rotate(' + e.hue + 'deg)';
+      // hit-flash sheet is solid white, so hue tint is a no-op on it
+      const sheet = (e.hit > 0 && IMG.monstersW) ? IMG.monstersW : monsterSheet(e.hue);
       ctx.drawImage(sheet, col*32, e.mrow*32, 32, 32, sx-size/2, sy-size*0.62 - hover, size, size);
-      if (e.hue) ctx.filter = 'none';
     }
     if (e.boss) {
       if (e.spawnAnim > 0) {
@@ -3329,9 +3439,7 @@
     ctx.scale(scale, scale);
     ctx.imageSmoothingEnabled = false;
     const col = DIRCOL[de.faceDir];
-    if (de.hue) ctx.filter = 'hue-rotate(' + de.hue + 'deg)';
-    ctx.drawImage(IMG.monsters, col*32, de.mrow*32, 32, 32, -size/2, -size*0.62, size, size);
-    if (de.hue) ctx.filter = 'none';
+    ctx.drawImage(monsterSheet(de.hue), col*32, de.mrow*32, 32, 32, -size/2, -size*0.62, size, size);
     ctx.restore();
   }
 
@@ -3519,7 +3627,6 @@
       const sx = tr.x - camX, sy = tr.y - camY;
       const alpha = Math.min(tr.t / 0.5, 1) * 0.5;
       ctx.save();
-      ctx.shadowColor = tr.color; ctx.shadowBlur = 12;
       const grd = ctx.createRadialGradient(sx, sy, 0, sx, sy, tr.r);
       grd.addColorStop(0, `rgba(224,208,64,${alpha * 0.6})`);
       grd.addColorStop(0.7, `rgba(180,160,30,${alpha * 0.35})`);
@@ -3661,13 +3768,11 @@
           const ma = Math.min(m.t / 0.5, 1) * 0.35;
           ctx.save();
           ctx.globalAlpha = ma;
-          ctx.filter = 'brightness(0.2) saturate(0)';
           if (IMG.monsters) {
             const col = DIRCOL[e.faceDir] + (Math.floor(e.animTime*7) % 2);
             const msize = e.r * 2.6;
-            ctx.drawImage(IMG.monsters, col*32, e.mrow*32, 32, 32, mx-msize/2, my-msize*0.62, msize, msize);
+            ctx.drawImage(monstersDarkSheet(), col*32, e.mrow*32, 32, 32, mx-msize/2, my-msize*0.62, msize, msize);
           }
-          ctx.filter = 'none';
           ctx.shadowColor = '#6030a0'; ctx.shadowBlur = 15;
           ctx.strokeStyle = `rgba(96,48,160,${ma})`; ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.arc(mx, my - 10, 20, 0, TAU); ctx.stroke();
@@ -3885,9 +3990,7 @@
       ctx.globalAlpha = 0.4;
       const base = DIRCOL[player.faceDir];
       const col = player.moving ? base + (Math.floor(player.animTime * 8) % 2) : base;
-      ctx.filter = 'brightness(0.3) saturate(0)';
-      ctx.drawImage(IMG.hero, col*32, heroRow*32, 32, 32, cx-16, cy-24, 32, 32);
-      ctx.filter = 'none';
+      ctx.drawImage(heroDarkSheet(), col*32, heroRow*32, 32, 32, cx-16, cy-24, 32, 32);
       ctx.restore();
     }
 
@@ -4058,10 +4161,12 @@
     for (const s of enemyShots) {
       const sx=s.x-camX, sy=s.y-camY;
       if (sx<-20||sx>W+20||sy<-20||sy>H+20) continue;
-      ctx.fillStyle = s.color || '#ff5a5a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+      const sc = s.color || '#ff5a5a';
+      const gsz = s.r * 5;
+      ctx.drawImage(glowSprite(sc), sx - gsz/2, sy - gsz/2, gsz, gsz);
+      ctx.fillStyle = sc;
       ctx.beginPath(); ctx.arc(sx,sy,s.r,0,TAU); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.arc(sx-1.5,sy-1.5,s.r*0.4,0,TAU); ctx.fill();
-      ctx.shadowBlur = 0;
     }
 
     // ---- y-sorted pass: objects + enemies + player -------------------
@@ -4101,10 +4206,10 @@
         const a = orbitAngle + i * TAU / n;
         const sx = player.x + Math.cos(a)*orad - camX;
         const sy = player.y + Math.sin(a)*orad - camY;
-        ctx.fillStyle = '#9bd8ff'; ctx.shadowColor = '#5aa8ff'; ctx.shadowBlur = 12;
+        ctx.drawImage(glowSprite('#5aa8ff'), sx - 20, sy - 20, 40, 40);
+        ctx.fillStyle = '#9bd8ff';
         ctx.beginPath(); ctx.arc(sx,sy,8,0,TAU); ctx.fill();
         ctx.fillStyle = '#eaf6ff'; ctx.beginPath(); ctx.arc(sx-2,sy-2,3,0,TAU); ctx.fill();
-        ctx.shadowBlur = 0;
       }
     }
     // Flame aura
@@ -4126,8 +4231,9 @@
         ctx.fillStyle='#8a6a3a'; ctx.fillRect(-p.r*0.7,-1.5,p.r*0.4,3);
       } else if (p.kind==='bolt') { // lightning
         ctx.rotate(Math.atan2(p.vy,p.vx));
-        ctx.strokeStyle='#f7e14a'; ctx.lineWidth=3; ctx.shadowColor='#f7e14a'; ctx.shadowBlur=8;
-        ctx.beginPath(); ctx.moveTo(-p.r,0); ctx.lineTo(-1,-3); ctx.lineTo(2,2); ctx.lineTo(p.r,-1); ctx.stroke(); ctx.shadowBlur=0;
+        ctx.drawImage(glowSprite('#f7e14a'), -p.r*1.8, -p.r*1.8, p.r*3.6, p.r*3.6);
+        ctx.strokeStyle='#f7e14a'; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(-p.r,0); ctx.lineTo(-1,-3); ctx.lineTo(2,2); ctx.lineTo(p.r,-1); ctx.stroke();
       } else if (p.kind==='balloon') { // fireball
         const fa = Math.atan2(p.vy, p.vx);
         ctx.rotate(fa);
@@ -4140,7 +4246,7 @@
           ctx.beginPath(); ctx.ellipse(-t * 5, 0, tr * 0.6, tr, 0, 0, TAU); ctx.fill();
         }
         ctx.globalAlpha = 1;
-        ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 22;
+        ctx.drawImage(glowSprite('#ff4400'), -p.r*2.2, -p.r*2.2, p.r*4.4, p.r*4.4);
         const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, p.r);
         cg.addColorStop(0, '#fffae0');
         cg.addColorStop(0.3, '#ffb830');
@@ -4158,7 +4264,6 @@
           ctx.beginPath(); ctx.arc(Math.cos(sa) * sr * 0.5, Math.sin(sa) * sr * 0.5, p.r * 0.3, 0, TAU); ctx.fill();
         }
         ctx.globalAlpha = 1;
-        ctx.shadowBlur = 0;
       } else if (p.kind==='pizza') { // returning axe
         ctx.rotate(p.spin);
         ctx.fillStyle='#8a6a3a'; ctx.fillRect(-1.5,-p.r,3,p.r*2); // handle
@@ -4167,12 +4272,12 @@
       } else if (p.kind==='missile') { // homing missile
         ctx.rotate(Math.atan2(p.vy, p.vx));
         ctx.fillStyle='#d04030'; ctx.beginPath(); ctx.moveTo(p.r+2,0); ctx.lineTo(-p.r,-3); ctx.lineTo(-p.r,3); ctx.closePath(); ctx.fill();
-        ctx.fillStyle='#ff8a40'; ctx.shadowColor='#ff6020'; ctx.shadowBlur=8;
+        ctx.drawImage(glowSprite('#ff6020'), -p.r-2-9, -9, 18, 18);
+        ctx.fillStyle='#ff8a40';
         ctx.beginPath(); ctx.arc(-p.r-2, 0, 3, 0, TAU); ctx.fill();
-        ctx.shadowBlur=0;
       } else if (p.kind==='boomerang') {
         const spin = gameTime * 14;
-        ctx.shadowColor='#80c0ff'; ctx.shadowBlur=14;
+        ctx.drawImage(glowSprite('#80c0ff'), -p.r*2, -p.r*2, p.r*4, p.r*4);
         for (let t=1;t<=3;t++) {
           ctx.globalAlpha = 0.12 / t;
           ctx.fillStyle='#80b8ff';
@@ -4193,16 +4298,15 @@
         ctx.fillStyle='rgba(255,255,255,0.4)';
         ctx.beginPath(); ctx.ellipse(p.r*0.5,-p.r*0.4,3,1.5,0.5,0,TAU); ctx.fill();
         ctx.beginPath(); ctx.ellipse(-p.r*0.5,-p.r*0.4,3,1.5,-0.5,0,TAU); ctx.fill();
-        ctx.shadowBlur=0;
       } else if (p.kind==='cross') {
-        ctx.shadowColor='#ffe080'; ctx.shadowBlur=10;
+        ctx.drawImage(glowSprite('#ffe080'), -p.r*2, -p.r*2, p.r*4, p.r*4);
         ctx.fillStyle='#ffe080';
         ctx.fillRect(-2,-p.r,4,p.r*2); ctx.fillRect(-p.r,-2,p.r*2,4);
-        ctx.shadowBlur=0;
       } else if (p.kind==='clone_bolt') {
         ctx.rotate(Math.atan2(p.vy,p.vx));
-        ctx.fillStyle='rgba(140,120,200,0.8)'; ctx.shadowColor='#8070c0'; ctx.shadowBlur=8;
-        ctx.beginPath(); ctx.arc(0,0,p.r,0,TAU); ctx.fill(); ctx.shadowBlur=0;
+        ctx.drawImage(glowSprite('#8070c0'), -p.r*2.4, -p.r*2.4, p.r*4.8, p.r*4.8);
+        ctx.fillStyle='rgba(140,120,200,0.8)';
+        ctx.beginPath(); ctx.arc(0,0,p.r,0,TAU); ctx.fill();
       } else {
         ctx.fillStyle='#e8e8f0'; ctx.beginPath(); ctx.arc(0,0,p.r,0,TAU); ctx.fill();
       }
@@ -4620,6 +4724,7 @@
 
   document.getElementById('charConfirm').onclick = () => {
     currentMap = selectedMap === 0 ? 1 : 5;
+    resetTerrainCaches(); // terrain noise caches are per-map
     hide('charSelect');
     newRun();
   };
