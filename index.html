@@ -4246,17 +4246,15 @@
     if (up.cross.lvl > 0) {
       weaponTimers.cross -= dt;
       if (weaponTimers.cross <= 0) {
+        weaponTimers.cross = 1.6 * cd;
         const isEvoX = up.cross.evolved === 'divinejudgment';
-        weaponTimers.cross = (isEvoX ? 1.1 : 1.6) * cd;
         const dirs = isEvoX ? 16 : (up.cross.lvl >= 5 ? 12 : up.cross.lvl >= 3 ? 8 : 4);
-        const cdmg = ((isEvoX ? 30 : 6) + up.cross.lvl * (isEvoX ? 10 : 2.5)) * player.dmg;
+        const cdmg = ((isEvoX ? 12 : 6) + up.cross.lvl * (isEvoX ? 4 : 2.5)) * player.dmg;
         const rayLife = isEvoX ? 1.8 : 1.2;
-        const rayR = isEvoX ? 11 : 7;
-        const rayPierce = isEvoX ? 999 : 3 + up.cross.lvl;
         for (let i = 0; i < dirs; i++) {
           const ca = (TAU * i / dirs);
           projectiles.push({ x:player.x, y:player.y, vx:Math.cos(ca)*220*ps, vy:Math.sin(ca)*220*ps,
-            r:rayR, dmg:cdmg, pierce:rayPierce, life:rayLife, hitSet:new Set(), kind:'cross' });
+            r:7, dmg:cdmg, pierce:3+up.cross.lvl, life:rayLife, hitSet:new Set(), kind:'cross' });
         }
         // Second wave: either lv6 encore (base) or always-on for Divine Judgment.
         if (isEvoX || up.cross.lvl >= 6) {
@@ -4264,7 +4262,7 @@
           for (let i = 0; i < dirs; i++) {
             const ca = (TAU * i / dirs) + offset;
             projectiles.push({ x:player.x, y:player.y, vx:Math.cos(ca)*160*ps, vy:Math.sin(ca)*160*ps,
-              r:rayR, dmg:cdmg*(isEvoX ? 1 : 0.75), pierce:rayPierce, life:rayLife + 0.3, hitSet:new Set(), kind:'cross' });
+              r:7, dmg:cdmg*0.75, pierce:3+up.cross.lvl, life:rayLife + 0.3, hitSet:new Set(), kind:'cross' });
           }
         }
         Audio2.tone(440, 0.08, 'sine', 0.06, 280);
@@ -4374,10 +4372,10 @@
     if (up.prism.lvl > 0) {
       const isEvoP = up.prism.evolved === 'solarlance';
       prismAngle += dt * (1.1 + up.prism.lvl * 0.1) * ps * (isEvoP ? 1.3 : 1);
-      const beams = isEvoP ? 4 : (up.prism.lvl >= 6 ? 3 : up.prism.lvl >= 3 ? 2 : 1);
+      const beams = isEvoP ? 4 : (up.prism.lvl >= 5 ? 3 : up.prism.lvl >= 2 ? 2 : 1);
       const bLen = ((isEvoP ? 320 : 200) + up.prism.lvl * (isEvoP ? 40 : 30)) * (player.areaMul || 1);
       const bWidth = (isEvoP ? 22 : 14) + up.prism.lvl * (isEvoP ? 3 : 2);
-      const bDmg = ((isEvoP ? 10 : 5) + up.prism.lvl * (isEvoP ? 5 : 2.5)) * player.dmg * 0.3;
+      const bDmg = ((isEvoP ? 10 : 5) + up.prism.lvl * (isEvoP ? 5 : 2.5)) * player.dmg * 0.6;
       for (const e of enemies) {
         if (e.prismHit > 0) { e.prismHit -= dt; continue; }
         const dx = e.x - player.x, dy = e.y - player.y;
@@ -4392,7 +4390,7 @@
           // perpendicular distance from the beam line at this range
           if (Math.abs(diff) < Math.PI/2 && Math.abs(Math.sin(diff)) * d < bWidth/2 + e.r) {
             damageEnemy(e, bDmg, 0, 0);
-            e.prismHit = 0.25;
+            e.prismHit = 0.2;
             // impact sparks where the beam cuts through
             const hue = (gameTime * 90 + b * 360 / beams) % 360;
             for (let s = 0; s < 2; s++) {
@@ -6728,7 +6726,7 @@
     // Prism Ray beams (prismatic, hue-cycling, with trails and flares)
     if (up && up.prism && up.prism.lvl > 0) {
       const isEvoP2 = up.prism.evolved === 'solarlance';
-      const beams = isEvoP2 ? 4 : (up.prism.lvl >= 6 ? 3 : up.prism.lvl >= 3 ? 2 : 1);
+      const beams = isEvoP2 ? 4 : (up.prism.lvl >= 5 ? 3 : up.prism.lvl >= 2 ? 2 : 1);
       const bLen = ((isEvoP2 ? 320 : 200) + up.prism.lvl * (isEvoP2 ? 40 : 30)) * (player.areaMul || 1);
       const bWidth = (isEvoP2 ? 22 : 14) + up.prism.lvl * (isEvoP2 ? 3 : 2);
       const px = player.x - camX, py = player.y - camY;
