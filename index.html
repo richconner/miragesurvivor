@@ -8,6 +8,12 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%230a0d16'/%3E%3Crect x='46' y='20' width='8' height='46' fill='%23cfd6e6'/%3E%3Crect x='36' y='60' width='28' height='8' fill='%238a6a3a'/%3E%3Crect x='40' y='66' width='20' height='20' fill='%23c9302c'/%3E%3C/svg%3E" />
 <!-- CrazyGames SDK v3. Whitelisted external dependency; loads on their platform.
      Locally it may fail to load (offline) — the game degrades gracefully. -->
+<!-- Install the unhandled-rejection swallower BEFORE the CG SDK loads so
+     its internal fire-and-forget chains (banner init, ad no-fills) don't
+     surface as noisy console errors before the main script gets a chance
+     to install its own handler. Safe: our own async code uses explicit
+     .catch(). -->
+<script>window.addEventListener('unhandledrejection', function(e){ e.preventDefault(); });</script>
 <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -168,6 +174,49 @@
     padding: 20px 50px 40px; border-radius: 0 0 20px 20px; display: flex; flex-direction: column; align-items: center;
     width: 100%; max-width: none; }
   .hiscore { color: #f0c040; font-weight: 700; margin-top: 6px; font-size: 15px; letter-spacing: 1px; }
+  /* Menu banner slot — reserves fixed height so the layout doesn't jump
+     when the CrazyGames responsive banner loads. Sizes match CG standard
+     banner tiers: 320×50 mobile → 468×60 tablet → 728×90 desktop. Slot
+     is centered; CG will render its iframe/ad element inside. */
+  /* Persistent banner ad. Fixed at viewport bottom so it stays visible
+     across menu-family overlays (menu, gameover, shop, char select,
+     bestiary, achievements) — meets CG requirement that the banner keeps
+     rendering across menu navigation. No border/background: the container
+     itself is invisible when empty per CG QA, and the ad iframe fills it. */
+  .menu-banner {
+    position: fixed;
+    left: 50%; transform: translateX(-50%);
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; justify-content: center;
+    width: calc(100% - 16px); max-width: 320px;
+    min-height: 50px;
+    z-index: 20;
+    overflow: hidden;
+    background: transparent;
+    pointer-events: auto;
+  }
+  @media (min-width: 601px)  { .menu-banner { min-height: 50px; max-width: 320px; } }
+  @media (min-width: 1025px) { .menu-banner { min-height: 60px; max-width: 468px; } }
+  /* When the persistent banner is showing, reserve bottom space in each
+     menu-family overlay so it doesn't cover buttons or the credit line. */
+  body.banner-shown #menu,
+  body.banner-shown #gameover,
+  body.banner-shown #shop,
+  body.banner-shown #charSelect,
+  body.banner-shown #bestiary,
+  body.banner-shown #achieves {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 1025px) {
+    body.banner-shown #menu,
+    body.banner-shown #gameover,
+    body.banner-shown #shop,
+    body.banner-shown #charSelect,
+    body.banner-shown #bestiary,
+    body.banner-shown #achieves {
+      padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    }
+  }
   .topbtns { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px));
     right: calc(14px + env(safe-area-inset-right, 0px)); z-index: 13; display: flex; gap: 8px; }
   /* Hide the pause button whenever the HUD is hidden (menu, shop, game over,
@@ -804,6 +853,51 @@
     #menu #menuGold { font-size: 13px !important; margin-top: 2px !important; }
     #menu .credit { font-size: 10px !important; margin-top: 5px !important; }
   }
+  /* ---- Desktop scale-up ----
+     Wide-and-tall viewports (real desktop / fullscreen) get roomier UI so
+     everything doesn't feel cramped in the top-center. Mobile + tablet
+     stay compact via the earlier media queries. Threshold intentionally
+     high (min-width:1025 AND min-height:701) so it only fires on genuine
+     desktop, not tablets. */
+  @media (min-width: 1025px) and (min-height: 701px) {
+    /* Char select — bigger cards, wider strip, larger PLAY button. */
+    #charSelect h2 { font-size: 34px; letter-spacing: 3px; margin-bottom: 14px; }
+    .char-grid { max-width: 720px; gap: 10px; padding: 12px 4px 8px; }
+    .char-card { width: 100px; padding: 10px 6px 8px; }
+    .char-card canvas { width: 56px; height: 56px; margin-bottom: 5px; }
+    .char-card .char-name { font-size: 14px; }
+    .char-card .char-weapon-ic { font-size: 18px; }
+    .char-arrow { width: 44px; height: 90px; font-size: 30px; border-radius: 10px; }
+    #charSelect .map-select { margin-top: 14px !important; gap: 12px !important; }
+    .map-btn { padding: 10px 20px !important; font-size: 14px !important; }
+    .mod-btn { padding: 9px 18px !important; font-size: 13px !important; }
+    .map-info { padding: 12px 18px; margin: 12px auto 4px; max-width: 480px; }
+    .map-info .mi-head { display: flex !important; margin-bottom: 4px; }
+    .map-info .mi-name { font-size: 16px; }
+    .map-info .mi-badge { font-size: 11px; padding: 3px 12px; }
+    .map-info .mi-flavor { display: block !important; font-size: 12px; margin-bottom: 8px; }
+    .map-info .mi-stats { gap: 4px; }
+    .map-info .mi-stat { font-size: 13px; }
+    #charConfirm { padding: 14px 48px !important; font-size: 22px !important; letter-spacing: 3px !important; margin-top: 16px !important; }
+    .char-back { margin-top: 8px !important; font-size: 14px !important; }
+    /* Custom scroll indicator wider on desktop. */
+    .scroll-indicator { max-width: 480px; height: 12px; min-height: 12px; flex: 0 0 12px; margin-top: 8px; }
+    .scroll-indicator .scroll-thumb { border-radius: 6px; }
+    /* Shop — bigger tiles + wider strip + larger free-upgrade button. */
+    #shop h2 { font-size: 30px !important; letter-spacing: 3px; margin-bottom: 6px; }
+    .shop-gold { font-size: 20px; margin-bottom: 14px; }
+    .shop-grid { max-width: 760px; gap: 12px; padding: 10px 4px 8px; }
+    .shop-item { flex: 0 0 130px !important; padding: 12px 8px !important; }
+    .shop-item .shop-ic { font-size: 32px !important; }
+    .shop-item .shop-nm { font-size: 14px !important; margin: 6px 0 3px !important; }
+    .shop-item .shop-desc { font-size: 11px !important; margin-bottom: 6px !important; }
+    .shop-item .shop-lv { font-size: 13px !important; }
+    .shop-arrow { width: 44px; height: 100px; font-size: 30px; border-radius: 10px; }
+    .shop-scroll-indicator { max-width: 560px !important; }
+    #freeUpgradeBtn { padding: 11px 28px !important; font-size: 16px !important; letter-spacing: 1px !important; }
+    #shopReset { font-size: 14px !important; margin-top: 16px !important; }
+    #shopBack { font-size: 14px !important; margin-top: 8px !important; }
+  }
 </style>
 </head>
 <body>
@@ -843,6 +937,11 @@
 </div>
 
 <canvas id="menuScene" class="hidden"></canvas>
+<!-- Persistent CrazyGames responsive banner — sits above all menu-family
+     overlays (menu, gameover, shop, char select, bestiary, achievements).
+     Rendered starting from the Burned Out (game over) screen per CG QA,
+     and kept visible across menu navigation so it has time to fill. -->
+<div id="menuBanner" class="menu-banner hidden"></div>
 <div id="menu" class="overlay hidden">
   <div class="menu-content">
     <canvas id="preview" width="360" height="130"></canvas>
@@ -916,6 +1015,9 @@
     </div>
     <div class="map-btn" data-map="2" style="cursor:pointer;padding:8px 18px;border-radius:8px;border:2px solid #2a3350;background:#141a2b;color:#9aa8c0;font-size:13px;font-weight:600;transition:border-color .1s,color .1s;">
       👑 Boss Battle
+    </div>
+    <div class="map-btn" data-map="3" style="cursor:pointer;padding:8px 18px;border-radius:8px;border:2px solid #2a3350;background:#141a2b;color:#9aa8c0;font-size:13px;font-weight:600;transition:border-color .1s,color .1s;">
+      ⚰️ Cursed Ruins
     </div>
   </div>
   <div id="mapInfo" class="map-info"></div>
@@ -996,7 +1098,9 @@
   <div class="overlay-actions">
     <button class="btn secondary hidden" id="reviveBtn">📺 WATCH AD TO REVIVE</button>
     <button class="btn secondary hidden" id="doubleGoldBtn">📺 WATCH AD → 2× GOLD</button>
-    <button class="btn" id="retryBtn">TRY AGAIN</button>
+    <!-- TRY AGAIN removed per CG QA — player is directed to menu or upgrades
+         so the persistent banner has adequate time on-screen to render. -->
+    <button class="btn" id="goUpgradesBtn">🛒 UPGRADES</button>
     <button class="btn secondary" id="menuBtn">MENU</button>
   </div>
 </div>
@@ -1010,6 +1114,15 @@
    ========================================================================= */
 (function () {
   'use strict';
+
+  // Silently swallow unhandled promise rejections. These come almost
+  // exclusively from the CrazyGames SDK's fire-and-forget internal chains
+  // (banner init, ad-blocker no-fills, etc) whose rejections we can't
+  // attach a handler to. Our own async code uses explicit .catch(), so
+  // suppressing here is safe — no real bug from our code would fall
+  // through this net. Prevents scary "Uncaught (in promise)" messages
+  // in the console for users on ad-blocked browsers.
+  window.addEventListener('unhandledrejection', (e) => { e.preventDefault(); });
 
   // ---- CrazyGames SDK integration layer -------------------------------
   // Full v3 integration. Every call is guarded so the game runs identically
@@ -1090,6 +1203,38 @@
         }
       } catch (e) {}
       fin(false); // no SDK → treat as unavailable
+    },
+    // Banner ad — responsive banner rendered into an existing DOM element.
+    // CG picks the best fitting size (320×50 phone → 728×90 desktop).
+    // Silently no-ops when the SDK isn't present (local dev / itch.io).
+    _bannerActive: {},
+    showBanner(elId) {
+      try {
+        const b = SDK()?.banner;
+        if (!b?.requestResponsiveBanner) return;
+        // If we already asked for this banner and it's still up, skip.
+        if (this._bannerActive[elId]) return;
+        this._bannerActive[elId] = true;
+        // The CG banner API returns a Promise — swallow async rejections
+        // (ad-blocker / no-fill / SDK stub in local dev) so they don't
+        // surface as unhandled rejections in the console.
+        // API takes a string id (not {id: ...}) per CG SDK v3.
+        const p = b.requestResponsiveBanner(elId);
+        if (p && p.catch) p.catch(() => { this._bannerActive[elId] = false; });
+      } catch(e){ this._bannerActive[elId] = false; }
+    },
+    clearBanner(elId) {
+      try {
+        const b = SDK()?.banner;
+        if (b?.clearBanner) {
+          const p = b.clearBanner(elId);
+          if (p && p.catch) p.catch(() => {});
+        }
+      } catch(e){}
+      this._bannerActive[elId] = false;
+      // Wipe the container so nothing lingers if SDK didn't clean it.
+      const el = document.getElementById(elId);
+      if (el) el.innerHTML = '';
     },
     // Persistent storage: SDK data module if available, else localStorage.
     getItem(k) {
@@ -2552,13 +2697,20 @@
     btn.disabled = true;
     btn.textContent = '📺 LOADING AD…';
     CG.rewardedAd((ok) => {
-      if (ok !== false) {
+      // Strict: only grant the voucher on genuine ad completion. Ad-blocked
+      // or no-fill returns get no voucher and the button is re-armed so
+      // the player can try again.
+      if (ok === true) {
         freeUpgradeAvailable = true;
         saveFreeUpgrade();
         refreshFreeUpgradeUI();
         Audio2.revive && Audio2.revive();
       } else {
-        refreshFreeUpgradeUI();
+        // Restore button state + show the "try again" hint via status line.
+        btn.disabled = false;
+        btn.textContent = '📺 AD BLOCKED — TRY AGAIN';
+        const status = document.getElementById('freeUpgradeStatus');
+        if (status) { status.textContent = 'Rewarded ad could not play — no reward granted.'; status.style.color = '#d04040'; }
       }
     });
   }
@@ -2572,7 +2724,7 @@
   const ACHIEVES_KEY = 'mirage_achieves';
   const BOSSKILLS_KEY = 'mirage_bosskills';
   const TOTALKILLS_KEY = 'mirage_totalkills';
-  const MAP_LABEL = { 0: 'Forest', 1: 'Dark Wastes', 2: 'Boss Battle' };
+  const MAP_LABEL = { 0: 'Forest', 1: 'Dark Wastes', 2: 'Boss Battle', 3: 'Cursed Ruins' };
   const BOSS_KILL_MILESTONES = [
     { n:10,   gold:500  },
     { n:50,   gold:1000 },
@@ -2596,10 +2748,32 @@
     totalBossKills = parseInt(CG.getItem(BOSSKILLS_KEY) || '0', 10) || 0;
     totalKills     = parseInt(CG.getItem(TOTALKILLS_KEY) || '0', 10) || 0;
   }
+  // Save coalescing — CrazyGames flagged high-frequency setItem writes.
+  // onAnyKill fires per enemy kill (potentially many per second), so we
+  // mark the achievement state dirty instead and flush at most once per
+  // 30s, or immediately on run-end / tab-hide (see flushAchieves below).
+  // Achievement UNLOCKS still write immediately (rare + important).
+  let _achievesDirty = false;
+  let _achievesFlushTimer = null;
+  const ACHIEVES_FLUSH_MS = 30000;
   function saveAchieves() {
     CG.setItem(ACHIEVES_KEY, JSON.stringify(achieves));
     CG.setItem(BOSSKILLS_KEY, String(totalBossKills));
     CG.setItem(TOTALKILLS_KEY, String(totalKills));
+    _achievesDirty = false;
+  }
+  function flushAchieves() {
+    if (_achievesFlushTimer) { clearTimeout(_achievesFlushTimer); _achievesFlushTimer = null; }
+    if (_achievesDirty) saveAchieves();
+  }
+  function markAchievesDirty() {
+    _achievesDirty = true;
+    if (!_achievesFlushTimer) {
+      _achievesFlushTimer = setTimeout(() => {
+        _achievesFlushTimer = null;
+        if (_achievesDirty) saveAchieves();
+      }, ACHIEVES_FLUSH_MS);
+    }
   }
   function unlockAchievement(id, name, gold) {
     if (achieves[id]) return false;
@@ -2662,7 +2836,9 @@
       unlockAchievement(`kill_boss_${bossType.id}`, `Slay ${bossType.name}`, 100);
     }
     totalBossKills++;
-    saveAchieves();
+    // Queue write instead of hitting the SDK per kill (CG QA guidance).
+    // Actual write happens on the 30s timer or on run-end flush.
+    markAchievesDirty();
     for (const m of BOSS_KILL_MILESTONES) {
       if (totalBossKills >= m.n) unlockAchievement(`bosses_${m.n}`, `${m.n} Bosses Slain`, m.gold);
     }
@@ -2671,7 +2847,9 @@
   // total-kill counter and unlocks cumulative-kill milestones.
   function onAnyKill() {
     totalKills++;
-    saveAchieves();
+    // Queue write — this was the biggest offender for setItem spam since
+    // it fires every enemy kill (dozens per second in a heavy fight).
+    markAchievesDirty();
     for (const m of TOTAL_KILL_MILESTONES) {
       if (totalKills >= m.n) unlockAchievement(`kills_${m.n}`, `${m.n.toLocaleString()} Monsters Slain`, m.gold);
     }
@@ -2753,7 +2931,7 @@
 
     // Section 5: beat each world with each hero
     const beatRows = [];
-    for (let map = 0; map < 3; map++) {
+    for (let map = 0; map < 4; map++) {
       for (const ch of CHARACTERS) {
         const done = !!achieves[`beat_${map}_${ch.id}`];
         beatRows.push(chip(ch.ic, `${MAP_LABEL[map]} · ${ch.name}`, 250, done));
@@ -3405,10 +3583,13 @@
 
   const levelDmgMul = 0.5, levelHpMul = 0.5;
   // Forest (non-Dark-Wastes) NPCs get +10% HP/damage/speed over base.
-  function mapHpMul()  { return currentMap === 5 ? 2.5 : 1.1; }
-  function mapDmgMul() { return currentMap === 5 ? 2.0 : 1.1; }
-  function mapSpdMul() { return currentMap === 5 ? 1.25 : 1.1; }
-  function mapTierBonus() { return currentMap === 5 ? 4 : 0; }
+  // Per-world stat multipliers, keyed by internal biome id (see biomeForMap).
+  // Biome 4 = Cursed Ruins — hardest world: fastest ramp, biggest HP/dmg bumps.
+  // Biome 5 = Dark Wastes — brutal. Biome 6 = Boss Arena (boss-focused). Others = normal.
+  function mapHpMul()  { return currentMap === 4 ? 3.5 : currentMap === 5 ? 2.5 : 1.1; }
+  function mapDmgMul() { return currentMap === 4 ? 2.5 : currentMap === 5 ? 2.0 : 1.1; }
+  function mapSpdMul() { return currentMap === 4 ? 1.4 : currentMap === 5 ? 1.25 : 1.1; }
+  function mapTierBonus() { return currentMap === 4 ? 6 : currentMap === 5 ? 4 : 0; }
 
   function spawnEnemy(boss) {
     const ang = Math.random() * TAU;
@@ -3976,7 +4157,10 @@
           const d = Math.sqrt(dist2(player.x, player.y, e.x, e.y));
           if (d < chainRange) {
             if (!e.chainHit || e.chainHit <= 0) {
-              const dmg = ((isEvoC ? 5 : 3) + up.chains.lvl * (isEvoC ? 2.5 : 1.5)) * player.dmg * 0.4;
+              // Buffed ~3.2× — old numbers made chains feel like tickle damage
+              // even in swarms. New per-tick damage roughly matches Frost Nova's
+              // per-target output while retaining the multi-target advantage.
+              const dmg = ((isEvoC ? 15 : 8) + up.chains.lvl * (isEvoC ? 6 : 4)) * player.dmg * 0.5;
               damageEnemy(e, dmg, 0, 0);
               if (isEvoC && player.hp < player.maxHp) {
                 player.hp = Math.min(player.maxHp, player.hp + dmg * 0.10);
@@ -4062,15 +4246,17 @@
     if (up.cross.lvl > 0) {
       weaponTimers.cross -= dt;
       if (weaponTimers.cross <= 0) {
-        weaponTimers.cross = 1.6 * cd;
         const isEvoX = up.cross.evolved === 'divinejudgment';
+        weaponTimers.cross = (isEvoX ? 1.1 : 1.6) * cd;
         const dirs = isEvoX ? 16 : (up.cross.lvl >= 5 ? 12 : up.cross.lvl >= 3 ? 8 : 4);
-        const cdmg = ((isEvoX ? 12 : 6) + up.cross.lvl * (isEvoX ? 4 : 2.5)) * player.dmg;
+        const cdmg = ((isEvoX ? 30 : 6) + up.cross.lvl * (isEvoX ? 10 : 2.5)) * player.dmg;
         const rayLife = isEvoX ? 1.8 : 1.2;
+        const rayR = isEvoX ? 11 : 7;
+        const rayPierce = isEvoX ? 999 : 3 + up.cross.lvl;
         for (let i = 0; i < dirs; i++) {
           const ca = (TAU * i / dirs);
           projectiles.push({ x:player.x, y:player.y, vx:Math.cos(ca)*220*ps, vy:Math.sin(ca)*220*ps,
-            r:7, dmg:cdmg, pierce:3+up.cross.lvl, life:rayLife, hitSet:new Set(), kind:'cross' });
+            r:rayR, dmg:cdmg, pierce:rayPierce, life:rayLife, hitSet:new Set(), kind:'cross' });
         }
         // Second wave: either lv6 encore (base) or always-on for Divine Judgment.
         if (isEvoX || up.cross.lvl >= 6) {
@@ -4078,7 +4264,7 @@
           for (let i = 0; i < dirs; i++) {
             const ca = (TAU * i / dirs) + offset;
             projectiles.push({ x:player.x, y:player.y, vx:Math.cos(ca)*160*ps, vy:Math.sin(ca)*160*ps,
-              r:7, dmg:cdmg*0.75, pierce:3+up.cross.lvl, life:rayLife + 0.3, hitSet:new Set(), kind:'cross' });
+              r:rayR, dmg:cdmg*(isEvoX ? 1 : 0.75), pierce:rayPierce, life:rayLife + 0.3, hitSet:new Set(), kind:'cross' });
           }
         }
         Audio2.tone(440, 0.08, 'sine', 0.06, 280);
@@ -4326,7 +4512,8 @@
     // Difficulty ramps ~25% faster than before (divisors 22→18, 33→26)
     // so the beginning stays easy but late game bites harder. Affects
     // enemy HP scaling, movement speed, boss HP, and tier gating.
-    difficulty = gameTime / (currentMap === 5 ? 18 : 26);
+    // Cursed Ruins (biome 4) ramps hardest — divisor 14 vs. Wastes' 18 / others' 26.
+    difficulty = gameTime / (currentMap === 4 ? 14 : currentMap === 5 ? 18 : 26);
     if (shake > 0) shake = Math.max(0, shake - dt * 80);
     // regen + lifesteal pool refill (cap: 3 HP/s max from lifesteal)
     if (player.regen) player.hp = Math.min(player.maxHp, player.hp + player.regen*dt);
@@ -4386,7 +4573,7 @@
     spawnTimer -= dt;
     const maxEnemies = 120;
     const earlyBoost = gameTime < 30 ? 0.25 : 0;
-    const spawnFloor = currentMap === 5 ? 0.10 : 0.15;
+    const spawnFloor = currentMap === 4 ? 0.08 : currentMap === 5 ? 0.10 : 0.15;
     let spawnRate = clamp(0.9 - difficulty*0.05 - earlyBoost, spawnFloor, 0.9);
     // Boss Battle: halve the non-boss spawn pressure so players can focus on
     // the bosses instead of being chased by trash.
@@ -4400,7 +4587,7 @@
     // 5-minute mark, then doubles to 2 bosses every 15s. Other maps use their
     // existing cadence.
     const isBossBattle = currentMap === 6;
-    const bossInterval = isBossBattle ? 15 : (currentMap === 5 ? 45 : 60);
+    const bossInterval = isBossBattle ? 15 : (currentMap === 4 ? 30 : currentMap === 5 ? 45 : 60);
     if (gameTime - lastBossTime > bossInterval) {
       lastBossTime = gameTime;
       // Boss Battle: 1 → 2 after 5:00. Other maps: 1, doubling after 5:00.
@@ -7078,8 +7265,10 @@
     CG.gameplayStop();
     Audio2.stopMusic();
     [523,659,784,988,1047].forEach((f,i)=>setTimeout(()=>Audio2.tone(f,0.2,'triangle',0.22),i*100));
-    // Run finished — unlock the next rewarded-ad opportunity.
+    // Run finished — unlock the next rewarded-ad opportunity + flush any
+    // queued achievement writes (kill counters accumulated during the run).
     resetFreeUpgradeCycle();
+    flushAchieves();
     checkVictoryAchievements();
     score = liveScore() + 1000;
     const isBest = score > hiScore;
@@ -7120,7 +7309,9 @@
     state = 'dying';
     CG.gameplayStop();
     Audio2.stopMusic();
-    // Run finished — unlock the next rewarded-ad opportunity (mirrors victory()).
+    // Run finished — flush queued achievement writes (kill counters)
+    // + unlock the next rewarded-ad opportunity (mirrors victory()).
+    flushAchieves();
     resetFreeUpgradeCycle();
     playDeathAnimation(() => {
       CG.midgameAd(showGameOverScreen);
@@ -7196,9 +7387,18 @@
     if (btn.disabled) return;           // ignore repeat taps while an ad is loading
     btn.disabled = true;
     btn.textContent = '📺 LOADING AD…';
-    // ok=true: rewarded ad watched. ok=false: no ad could be served — grant the
-    // revive anyway so the button always works (it's still limited to once/run).
-    CG.rewardedAd(() => reviveNow());
+    // Strict: only grant the revive if the SDK reports the ad actually
+    // completed. Ad-blocked / errored / no-fill users get no reward and
+    // the button re-enables so they can try again or use another option
+    // per CG's anti-adblock guidance.
+    CG.rewardedAd((ok) => {
+      if (ok === true) {
+        reviveNow();
+      } else {
+        btn.disabled = false;
+        btn.textContent = '📺 AD BLOCKED — TRY AGAIN';
+      }
+    });
   }
 
   // Rewarded-ad offer #1: watch an ad → double your run's gold. One use per run.
@@ -7208,7 +7408,14 @@
     btn.disabled = true;
     btn.textContent = '📺 LOADING AD…';
     const bonus = runGold; // grant the same amount as the run earned = 2× total
-    CG.rewardedAd(() => {
+    // Strict: only credit gold if the ad actually played through. Ad-blocked
+    // / no-fill users get nothing and the button re-enables for another try.
+    CG.rewardedAd((ok) => {
+      if (ok !== true) {
+        btn.disabled = false;
+        btn.textContent = '📺 AD BLOCKED — TRY AGAIN';
+        return;
+      }
       doubleGoldClaimedThisRun = true;
       metaGold += bonus;
       saveShopData();
@@ -7259,8 +7466,68 @@
   }
 
   // ---- UI helpers -----------------------------------------------------
-  function show(id){ document.getElementById(id).classList.remove('hidden'); }
-  function hide(id){ document.getElementById(id).classList.add('hidden'); }
+  // Menu-family screens across which the persistent CG banner stays visible.
+  // Per CG QA: banner must start rendering from the Burned Out (gameover)
+  // screen and remain up through menu / shop / char select navigation so it
+  // has enough time on-screen to fill. It's cleared only when a run begins.
+  const MENU_FAMILY = ['menu', 'gameover', 'shop', 'charSelect', 'bestiary', 'achieves'];
+  let _bannerUpdatePending = false;
+  // Refresh the persistent banner every 35s per CG QA — clears then re-requests
+  // so the ad rotates through fill/refresh cycles for optimized revenue.
+  let _bannerRefreshTimer = null;
+  function startBannerRefresh(){
+    if (_bannerRefreshTimer) return;
+    _bannerRefreshTimer = setInterval(() => {
+      // Only refresh while a menu-family screen is still visible.
+      const anyVisible = MENU_FAMILY.some(id => {
+        const el = document.getElementById(id);
+        return el && !el.classList.contains('hidden');
+      });
+      if (!anyVisible) { stopBannerRefresh(); return; }
+      CG.clearBanner('menuBanner');
+      // Short delay so the SDK settles the clear before the next request.
+      setTimeout(() => CG.showBanner('menuBanner'), 150);
+    }, 35000);
+  }
+  function stopBannerRefresh(){
+    if (_bannerRefreshTimer) { clearInterval(_bannerRefreshTimer); _bannerRefreshTimer = null; }
+  }
+  function updateMenuBanner(){
+    // Debounce to end-of-frame so a hide() immediately followed by a show()
+    // in the same tick (e.g. hide('menu'); show('shop')) is evaluated once
+    // with both states applied — otherwise the banner would flash-clear
+    // mid-transition and lose its fill session.
+    if (_bannerUpdatePending) return;
+    _bannerUpdatePending = true;
+    Promise.resolve().then(() => {
+      _bannerUpdatePending = false;
+      const anyVisible = MENU_FAMILY.some(id => {
+        const el = document.getElementById(id);
+        return el && !el.classList.contains('hidden');
+      });
+      const banner = document.getElementById('menuBanner');
+      if (!banner) return;
+      if (anyVisible) {
+        banner.classList.remove('hidden');
+        document.body.classList.add('banner-shown');
+        CG.showBanner('menuBanner');
+        startBannerRefresh();
+      } else {
+        banner.classList.add('hidden');
+        document.body.classList.remove('banner-shown');
+        CG.clearBanner('menuBanner');
+        stopBannerRefresh();
+      }
+    });
+  }
+  function show(id){
+    document.getElementById(id).classList.remove('hidden');
+    updateMenuBanner();
+  }
+  function hide(id){
+    document.getElementById(id).classList.add('hidden');
+    updateMenuBanner();
+  }
 
   // reset level vars on new run
   function newRun() {
@@ -7397,6 +7664,17 @@
         ['💠', '<b>Fewer trash mobs</b> — every one drops XP so you can level up fast'],
       ],
     },
+    3: {
+      name: '⚰️ Cursed Ruins', diff: 'NIGHTMARE', diffColor: '#b060f0',
+      flavor: 'Where the dead outnumber the living. Bring a build that can end things fast — you will not outlast this place.',
+      stats: [
+        ['⏱️', '<b>10 minute</b> survival run'],
+        ['👑', 'Boss every <b>30s</b> · <b>2×</b> bosses after <b>5:00</b>'],
+        ['💀', 'Enemies are horrifying: <b>3.5×</b> HP, <b>2.5×</b> damage, <b>1.4×</b> speed'],
+        ['🔥', 'Difficulty ramps <b>~30% faster</b> than Dark Wastes'],
+        ['👻', '<b>Elite roster</b>: liches, ghosts, dark mages, demons — tier gate <b>+6</b>'],
+      ],
+    },
   };
   function renderMapInfo(idx) {
     const m = MAP_INFO[idx]; if (!m) return;
@@ -7425,7 +7703,13 @@
   // Map-index → internal biome. Kept in one place so every launcher agrees.
   // 0 = Forest → biome 1, 1 = Dark Wastes → biome 5, 2 = Boss Battle → biome 2 (rocky arena).
   // 0 = Forest → biome 1, 1 = Dark Wastes → biome 5, 2 = Boss Battle → biome 6 (arena)
-  function biomeForMap(mapIdx) { return mapIdx === 0 ? 1 : mapIdx === 1 ? 5 : 6; }
+  function biomeForMap(mapIdx) {
+    // 0 Forest→biome 1 (forest), 1 Dark Wastes→5, 2 Boss Battle→6 (arena), 3 Cursed Ruins→4 (ruins).
+    if (mapIdx === 0) return 1;
+    if (mapIdx === 1) return 5;
+    if (mapIdx === 2) return 6;
+    return 4;
+  }
   document.querySelectorAll('.map-btn').forEach(btn => {
     btn.onclick = () => {
       selectedMap = parseInt(btn.dataset.map);
@@ -7557,7 +7841,14 @@
       });
     }, 900);
   }
-  document.getElementById('retryBtn').onclick = retryWithTransition;
+  // TRY AGAIN removed from gameover — players now route through menu or shop
+  // so the persistent banner has adequate time on-screen (CG QA requirement).
+  document.getElementById('goUpgradesBtn').onclick = () => {
+    hide('gameover');
+    show('menu');
+    // Open shop directly so the click is one tap instead of two.
+    document.getElementById('shopBtn').click();
+  };
   document.getElementById('reviveBtn').onclick = doRevive;
   document.getElementById('doubleGoldBtn').onclick = doDoubleGold;
   document.getElementById('menuBtn').onclick = toMenu;
@@ -7582,7 +7873,13 @@
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && state === 'playing') { state = 'paused'; CG.gameplayStop(); }
     else if (!document.hidden && state === 'paused' && !manualPause) { state = 'playing'; last = performance.now(); CG.gameplayStart(); }
+    // Flush any queued achievement writes when the tab is hidden — makes
+    // sure kill counters survive the player switching apps / closing tab
+    // before the 30s coalesce timer fires.
+    if (document.hidden) flushAchieves();
   });
+  // Same for pagehide (fires on page unload/navigation) — last chance to persist.
+  window.addEventListener('pagehide', () => { try { flushAchieves(); } catch(e){} });
 
   // ---- Animated menu scene --------------------------------------------
   const menuScene = { active: false, embers: [], monsters: [], bosses: [], sparks: [], runes: [], orbs: [], scroll: 0, t: 0, lightning: 0 };
@@ -7957,7 +8254,7 @@
     // data module isn't queryable at module-init time).
     selectedChar = parseInt(CG.getItem('mirage_lastHero') || '0', 10) || 0;
     selectedMap  = parseInt(CG.getItem('mirage_lastMap')  || '0', 10) || 0;
-    if (selectedMap !== 0 && selectedMap !== 1 && selectedMap !== 2) selectedMap = 0;
+    if (selectedMap < 0 || selectedMap > 3) selectedMap = 0;
     if (selectedChar >= CHARACTERS.length || !unlockedChars[CHARACTERS[selectedChar].id]) selectedChar = 0;
     // Reflect the loaded map on the map buttons + info panel.
     if (typeof paintMapBtn === 'function') { paintMapBtn(selectedMap); renderMapInfo(selectedMap); }
